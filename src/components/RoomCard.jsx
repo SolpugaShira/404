@@ -1,26 +1,21 @@
 import { Link } from 'react-router-dom';
 
 const RoomCard = ({ room }) => {
-    const { id, maxSeats, entryFee, participants, status } = room;
-    const occupied = participants.length;
-    const isWaiting = status === 'waiting';
+    const { id, name, maxSeats, entryFee, currentParticipants, status, currentPrizePool } = room;
+    const occupied = currentParticipants;
+    const isWaiting = status === 'WAITING' || status === 'FILLING';
 
     return (
         <Link to={`/room/${id}`} className="room-card-link">
             <div className={`room-card ${!isWaiting ? 'disabled-room' : ''}`}>
-                <h3>Комната {id.slice(-3)}</h3>
+                <h3>{name}</h3>
                 <div className="room-info">
-                    <span>👥 {occupied}/{maxSeats}</span>
-                    <span>💰 {entryFee}</span>
+                    <span>Игроки: {occupied}/{maxSeats}</span>
+                    <span>Вход: {entryFee}</span>
                 </div>
-                <div className="room-status">{isWaiting ? '🟢 Ожидание' : '🔴 Завершена'}</div>
+                <div className="room-status">{isWaiting ? 'Ожидание' : 'Завершена'}</div>
                 <div className="participants-preview">
-                    {participants.slice(0, 3).map((p) => (
-                        <span key={p.userId} className="participant-badge">
-              {p.isBot ? '🤖' : '👤'} {p.username}
-            </span>
-                    ))}
-                    {participants.length > 3 && <span>+{participants.length - 3}</span>}
+                    <span className="participant-badge">Призовой фонд: {currentPrizePool}</span>
                 </div>
             </div>
         </Link>

@@ -3,9 +3,9 @@ const SearchBar = ({ value, onChange }) => {
         <div className="search-bar">
             <input
                 type="text"
-                placeholder="🔍 Поиск игры..."
+                placeholder="Поиск комнаты по названию, описанию или id"
                 value={value}
-                onChange={(e) => onChange(e.target.value)}
+                onChange={(event) => onChange(event.target.value)}
             />
         </div>
     );

@@ -1,58 +1,180 @@
-// src/context/UserContext.jsx (фрагмент)
-import { createContext, useState, useContext, useEffect } from 'react';
-import { connectSocket, disconnectSocket, socket } from '../socket';
+import { useEffect, useRef, useState } from 'react';
+import AuthPage from '../components/AuthPage';
+import { fetchUserProfile, login, register } from '../api/userApi';
+import { connectStomp, disconnectStomp } from '../stompClient';
+import UserContext from './userContext';
 
-const UserContext = createContext();
+const mapUserPayload = (payload) => ({
+    id: payload.id,
+    username: payload.username,
+    balance: payload.balance ?? payload.bonusBalance ?? 0,
+    stats: payload.stats ?? null,
+});
 
 export const UserProvider = ({ children }) => {
-    // Загружаем пользователя из localStorage или используем дефолтного
+    const storage = typeof window !== 'undefined' ? window.sessionStorage : null;
+
     const loadUser = () => {
-        const saved = localStorage.getItem('currentUser');
+        const saved = storage?.getItem('currentUser');
         if (saved) {
             try {
                 return JSON.parse(saved);
-            } catch (e) {
-                return { id: 'current-user-1', username: 'TestPlayer', balance: 1000 };
+            } catch {
+                return null;
             }
         }
-        return { id: 'current-user-1', username: 'TestPlayer', balance: 1000 };
+
+        return null;
     };
 
     const [user, setUser] = useState(loadUser);
+    const [ready, setReady] = useState(false);
+    const stompSubscriptions = useRef([]);
 
-    // Сохраняем в localStorage при изменении пользователя
     useEffect(() => {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-    }, [user]);
-
-    // Подключение сокета при наличии userId
-    useEffect(() => {
-        if (user.id) {
-            connectSocket(user.id, user.username);
+        if (user?.id || user?.username) {
+            storage?.setItem('currentUser', JSON.stringify(user));
+            return;
         }
-        return () => {
-            disconnectSocket();
-        };
-    }, [user.id, user.username]);
 
-    // Слушаем обновление баланса от сервера
+        storage?.removeItem('currentUser');
+    }, [storage, user]);
+
     useEffect(() => {
-        const onBalanceUpdate = (newBalance) => {
-            setUser(prev => ({ ...prev, balance: newBalance }));
+        let cancelled = false;
+
+        const syncUser = async () => {
+            if (!user?.id && !user?.username) {
+                setReady(true);
+                return;
+            }
+
+            try {
+                const resolvedUser = user.id
+                    ? await fetchUserProfile(user.id).catch(() => login(user.username))
+                    : await login(user.username);
+
+                if (!cancelled) {
+                    setUser(mapUserPayload(resolvedUser));
+                }
+            } catch (error) {
+                console.error('Failed to initialize user:', error);
+            } finally {
+                if (!cancelled) {
+                    setReady(true);
+                }
+            }
         };
-        socket.on('balance:update', onBalanceUpdate);
-        return () => socket.off('balance:update', onBalanceUpdate);
-    }, []);
+
+        syncUser();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        if (!ready || !user?.id) {
+            return undefined;
+        }
+
+        const onConnected = (client) => {
+            stompSubscriptions.current.forEach((subscription) => subscription.unsubscribe());
+            stompSubscriptions.current = [];
+
+            const balanceSub = client.subscribe('/user/queue/balance', (message) => {
+                try {
+                    const newBalance = JSON.parse(message.body);
+                    setUser((prev) => ({ ...prev, balance: newBalance }));
+                } catch (error) {
+                    console.error('Balance parse error:', error);
+                }
+            });
+
+            stompSubscriptions.current.push(balanceSub);
+        };
+
+        connectStomp(user.id, user.username, onConnected, (error) => {
+            console.error('STOMP connection failed:', error);
+        });
+
+        return () => {
+            stompSubscriptions.current.forEach((subscription) => subscription.unsubscribe());
+            stompSubscriptions.current = [];
+            disconnectStomp();
+        };
+    }, [ready, user?.id, user?.username]);
 
     const updateBalance = (amount) => {
-        setUser(prev => ({ ...prev, balance: prev.balance + amount }));
+        setUser((prev) => ({ ...prev, balance: prev.balance + amount }));
     };
 
+    const authenticate = async (authAction, username) => {
+        const normalizedUsername = username.trim();
+        const payload = await authAction(normalizedUsername);
+        const profile = payload?.id ? await fetchUserProfile(payload.id).catch(() => payload) : payload;
+        const normalizedUser = mapUserPayload(profile);
+        setUser(normalizedUser);
+        setReady(true);
+        return normalizedUser;
+    };
+
+    const loginUser = async (username) => authenticate(login, username);
+
+    const registerUser = async (username) => authenticate(register, username);
+
+    const logoutUser = async () => {
+        await disconnectStomp();
+        stompSubscriptions.current.forEach((subscription) => subscription.unsubscribe());
+        stompSubscriptions.current = [];
+        setUser(null);
+        setReady(true);
+    };
+
+    const refreshUser = async () => {
+        if (!user?.id) {
+            return null;
+        }
+
+        const freshUser = await fetchUserProfile(user.id);
+        const normalizedUser = mapUserPayload(freshUser);
+        setUser((prev) => ({ ...prev, ...normalizedUser }));
+        return normalizedUser;
+    };
+
+    if (!ready || !user?.id) {
+        return (
+            <UserContext.Provider value={{
+                user,
+                setUser,
+                updateBalance,
+                refreshUser,
+                ready,
+                isAuthenticated: Boolean(user?.id),
+                loginUser,
+                registerUser,
+                logoutUser,
+            }}
+            >
+                {ready ? <AuthPage /> : null}
+            </UserContext.Provider>
+        );
+    }
+
     return (
-        <UserContext.Provider value={{ user, setUser, updateBalance }}>
+        <UserContext.Provider value={{
+            user,
+            setUser,
+            updateBalance,
+            refreshUser,
+            ready,
+            isAuthenticated: true,
+            loginUser,
+            registerUser,
+            logoutUser,
+        }}
+        >
             {children}
         </UserContext.Provider>
     );
 };
-
-export const useUser = () => useContext(UserContext);

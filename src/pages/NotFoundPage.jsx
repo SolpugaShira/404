@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 
 const NotFoundPage = () => (
-    <div>
-        <h2>404 — Страница не найдена</h2>
-        <Link to="/">Вернуться к играм</Link>
+    <div className="not-found-page">
+        <h2>404: страница не найдена</h2>
+        <Link to="/">Вернуться к комнатам</Link>
     </div>
 );
 

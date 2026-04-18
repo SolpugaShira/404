@@ -1,47 +1,228 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { fetchRoomById, joinRoom, leaveRoom, startGame } from '../api/roomsApi';
-import { useUser } from '../context/UserContext';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+    activateBoost,
+    fetchRoomById,
+    fetchWinnerByRoomId,
+    joinRoom,
+    normalizeRoundMessage,
+    normalizeSessionMessage,
+} from '../api/roomsApi';
+import { useUser } from '../context/useUser';
+import { getStompClient, onStompConnectionChange } from '../stompClient';
 
 const GameRoomPage = () => {
     const { roomId } = useParams();
     const navigate = useNavigate();
-    const { user, updateBalance } = useUser();
+    const { user, refreshUser } = useUser();
     const [room, setRoom] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [actionLoading, setActionLoading] = useState(false);
     const [winner, setWinner] = useState(null);
+    const [displaySecondsLeft, setDisplaySecondsLeft] = useState(0);
+    const [detailsOpen, setDetailsOpen] = useState(false);
+    const [socketState, setSocketState] = useState({
+        connected: false,
+        sessionSubscribed: false,
+        roundSubscribed: false,
+    });
+    const roomSnapshotRef = useRef(null);
 
-    const loadRoom = async () => {
-        try {
-            setLoading(true);
-            const data = await fetchRoomById(roomId);
-            setRoom(data);
-            if (data.status === 'finished' && data.winner) {
-                setWinner(data.winner);
-            }
-            setError(null);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
+    const mergeStableRoomState = (nextRoom, previousRoom = null) => {
+        const stableRoom = roomSnapshotRef.current ?? previousRoom;
+
+        if (!nextRoom && !stableRoom) {
+            return null;
         }
+
+        const mergedRoom = {
+            ...stableRoom,
+            ...previousRoom,
+            ...nextRoom,
+            name: nextRoom?.name || stableRoom?.name || previousRoom?.name || 'Комната',
+            maxSeats: nextRoom?.maxSeats || stableRoom?.maxSeats || previousRoom?.maxSeats || 0,
+            entryFee: nextRoom?.entryFee || stableRoom?.entryFee || previousRoom?.entryFee || 0,
+            currentParticipants: nextRoom?.currentParticipants
+                ?? nextRoom?.participants?.length
+                ?? previousRoom?.currentParticipants
+                ?? stableRoom?.currentParticipants
+                ?? 0,
+            participants: nextRoom?.participants ?? previousRoom?.participants ?? stableRoom?.participants ?? [],
+        };
+
+        roomSnapshotRef.current = {
+            ...roomSnapshotRef.current,
+            id: mergedRoom.id,
+            roomId: mergedRoom.roomId,
+            sessionId: mergedRoom.sessionId,
+            name: mergedRoom.name,
+            maxSeats: mergedRoom.maxSeats,
+            entryFee: mergedRoom.entryFee,
+            currentPrizePool: mergedRoom.currentPrizePool ?? 0,
+            boostEnabled: mergedRoom.boostEnabled ?? false,
+            boostCost: mergedRoom.boostCost ?? 0,
+            boostWeightMultiplier: mergedRoom.boostWeightMultiplier ?? 0,
+            description: mergedRoom.description ?? '',
+        };
+
+        return mergedRoom;
+    };
+
+    const refreshRoomState = async () => {
+        const data = await fetchRoomById(roomId);
+        setRoom((prev) => mergeStableRoomState(data, prev));
+
+        if (data?.status === 'COMPLETED') {
+            const latestWinner = data.result ?? await fetchWinnerByRoomId(roomId).catch(() => null);
+            setWinner(latestWinner);
+        } else {
+            setWinner(null);
+        }
+
+        return data;
     };
 
     useEffect(() => {
+        const calculateSecondsLeft = () => {
+            if (!room || room.status === 'COMPLETED') {
+                return 0;
+            }
+
+            if (!room.timerStartedAt) {
+                return Math.max(room.secondsLeft ?? 0, 0);
+            }
+
+            const elapsedSeconds = Math.floor((Date.now() - room.timerStartedAt) / 1000);
+            const initialSecondsLeft = room.secondsLeft ?? 60;
+            return Math.max(initialSecondsLeft - elapsedSeconds, 0);
+        };
+
+        setDisplaySecondsLeft(calculateSecondsLeft());
+
+        if (!room || room.status === 'COMPLETED') {
+            return undefined;
+        }
+
+        const intervalId = window.setInterval(() => {
+            setDisplaySecondsLeft(calculateSecondsLeft());
+        }, 1000);
+
+        return () => {
+            window.clearInterval(intervalId);
+        };
+    }, [room]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadRoom = async () => {
+            setLoading(true);
+
+            try {
+                const data = await fetchRoomById(roomId);
+                if (cancelled) {
+                    return;
+                }
+
+                setRoom((prev) => mergeStableRoomState(data, prev));
+
+                if (data?.status === 'COMPLETED') {
+                    const latestWinner = data.result ?? await fetchWinnerByRoomId(roomId).catch(() => null);
+                    if (!cancelled) {
+                        setWinner(latestWinner);
+                    }
+                } else if (!cancelled) {
+                    setWinner(null);
+                }
+
+                setError(null);
+            } catch (err) {
+                if (!cancelled) {
+                    setError(err.message);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        };
+
         loadRoom();
-        // Можно добавить интервал для обновления комнаты
-        const interval = setInterval(loadRoom, 5000);
-        return () => clearInterval(interval);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [roomId]);
+
+    useEffect(() => {
+        const subscribeToRoomTopics = (client) => {
+            if (!client?.connected) {
+                setSocketState({
+                    connected: false,
+                    sessionSubscribed: false,
+                    roundSubscribed: false,
+                });
+                return [];
+            }
+
+            const sessionSub = client.subscribe(`/topic/session/${roomId}`, (message) => {
+                try {
+                    const payload = JSON.parse(message.body);
+                    setRoom((prev) => {
+                        const nextRoom = normalizeSessionMessage(payload, prev);
+                        if (nextRoom?.status === 'COMPLETED' && nextRoom.result) {
+                            setWinner(nextRoom.result);
+                        }
+                        return mergeStableRoomState(nextRoom, prev);
+                    });
+                } catch (parseError) {
+                    console.error('Session parse error:', parseError);
+                }
+            });
+
+            const roundSub = client.subscribe(`/topic/round/${roomId}`, (message) => {
+                try {
+                    setWinner(normalizeRoundMessage(JSON.parse(message.body)));
+                } catch (parseError) {
+                    console.error('Round parse error:', parseError);
+                }
+            });
+
+            setSocketState({
+                connected: true,
+                sessionSubscribed: true,
+                roundSubscribed: true,
+            });
+
+            return [sessionSub, roundSub];
+        };
+
+        let subscriptions = subscribeToRoomTopics(getStompClient());
+        const unsubscribeConnection = onStompConnectionChange((client) => {
+            subscriptions.forEach((subscription) => subscription.unsubscribe());
+            subscriptions = subscribeToRoomTopics(client);
+        });
+
+        return () => {
+            subscriptions.forEach((subscription) => subscription.unsubscribe());
+            setSocketState({
+                connected: false,
+                sessionSubscribed: false,
+                roundSubscribed: false,
+            });
+            unsubscribeConnection();
+        };
     }, [roomId]);
 
     const handleJoin = async () => {
         setActionLoading(true);
         try {
-            const result = await joinRoom(roomId, user.userId, user.username);
-            setRoom(result.room);
-            updateBalance(result.newBalance);
+            await joinRoom(roomId, user.id, user.username);
+            await Promise.all([
+                refreshRoomState(),
+                refreshUser(),
+            ]);
             setError(null);
         } catch (err) {
             setError(err.message);
@@ -50,12 +231,14 @@ const GameRoomPage = () => {
         }
     };
 
-    const handleLeave = async () => {
+    const handleActivateBoost = async () => {
         setActionLoading(true);
         try {
-            const result = await leaveRoom(roomId, user.userId);
-            setRoom(result.room);
-            // Баланс не меняется при выходе
+            await activateBoost(roomId, user.id);
+            await Promise.all([
+                refreshRoomState(),
+                refreshUser(),
+            ]);
             setError(null);
         } catch (err) {
             setError(err.message);
@@ -64,47 +247,68 @@ const GameRoomPage = () => {
         }
     };
 
-    const handleStartGame = async () => {
-        setActionLoading(true);
-        try {
-            const result = await startGame(roomId);
-            setRoom(result.room);
-            setWinner(result.winner);
-            updateBalance(result.newBalance);
-            setError(null);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setActionLoading(false);
-        }
-    };
+    if (loading) {
+        return <div className="loading">Загрузка комнаты...</div>;
+    }
 
-    if (loading) return <div className="loading">Загрузка комнаты...</div>;
-    if (error) return <div className="error">Ошибка: {error}</div>;
-    if (!room) return <div className="error">Комната не найдена</div>;
+    if (error) {
+        return <div className="error">Ошибка: {error}</div>;
+    }
 
-    const isWaiting = room.status === 'waiting';
-    const isFinished = room.status === 'finished';
-    const occupied = room.participants.length;
-    const freeSeats = room.maxSeats - occupied;
-    const userIsParticipant = room.participants.some(p => p.userId === user.userId);
-    const canStart = isWaiting && occupied >= 2 && userIsParticipant; // любой участник может запустить
-    const canJoin = isWaiting && !userIsParticipant && freeSeats > 0 && user.balance >= room.entryFee;
+    if (!room) {
+        return <div className="error">Комната не найдена</div>;
+    }
+
+    const participants = room.participants ?? [];
+    const isWaiting = room.status === 'WAITING' || room.status === 'FILLING';
+    const isFinished = room.status === 'COMPLETED';
+    const occupied = room.currentParticipants ?? participants.length;
+    const freeSeats = Math.max((room.maxSeats ?? 0) - occupied, 0);
+    const userIsParticipant = participants.some((participant) => participant.userId === user.id);
+    const currentUserParticipant = participants.find((participant) => participant.userId === user.id) ?? null;
+    const canJoin = isWaiting
+        && !userIsParticipant
+        && freeSeats > 0
+        && user.balance >= room.entryFee;
+    const canActivateBoost = isWaiting
+        && userIsParticipant
+        && room.boostEnabled
+        && !currentUserParticipant?.hasBoost
+        && user.balance >= (room.boostCost ?? 0);
+
+    const roomDetails = [
+        { label: 'ID комнаты', value: room.roomId ?? room.id ?? '—' },
+        { label: 'ID сессии', value: room.sessionId ?? '—' },
+        { label: 'Название', value: room.name ?? '—' },
+        { label: 'Статус', value: room.status ?? '—' },
+        { label: 'Игроков', value: `${occupied}/${room.maxSeats ?? 0}` },
+        { label: 'Свободно', value: freeSeats },
+        { label: 'Вход', value: room.entryFee ?? 0 },
+        { label: 'Призовой фонд', value: room.currentPrizePool ?? 0 },
+        { label: 'Таймер', value: `${displaySecondsLeft} c` },
+        { label: 'Буст', value: room.boostEnabled ? 'Да' : 'Нет' },
+        { label: 'Цена буста', value: room.boostCost ?? 0 },
+        { label: 'Множитель буста', value: room.boostWeightMultiplier ?? '—' },
+        { label: 'WebSocket', value: socketState.connected ? 'Подключен' : 'Не подключен' },
+        { label: 'Sub /session', value: socketState.sessionSubscribed ? 'Активна' : 'Нет' },
+        { label: 'Sub /round', value: socketState.roundSubscribed ? 'Активна' : 'Нет' },
+        { label: 'Описание', value: room.description || '—' },
+    ];
 
     return (
         <div className="game-room-page">
             <button className="back-btn" onClick={() => navigate('/')}>
-                ← Назад к списку
+                Назад к списку
             </button>
 
             <div className="room-header">
-                <h2>Комната {room.id.slice(-6)}</h2>
+                <h2>{room.name ?? `Комната ${String(room.roomId ?? room.id).slice(-6)}`}</h2>
                 <div className="room-meta">
-                    <span>👥 {occupied}/{room.maxSeats}</span>
-                    <span>💰 Вход: {room.entryFee}</span>
+                    <span>{occupied}/{room.maxSeats} игроков</span>
+                    <span>Вход: {room.entryFee}</span>
                     <span className={`status-badge ${isWaiting ? 'waiting' : 'finished'}`}>
-            {isWaiting ? 'Ожидание' : 'Завершена'}
-          </span>
+                        {isWaiting ? 'Ожидание' : 'Завершена'}
+                    </span>
                 </div>
             </div>
 
@@ -112,57 +316,50 @@ const GameRoomPage = () => {
                 <div className="participants-panel">
                     <h3>Участники</h3>
                     <div className="participants-list">
-                        {room.participants.map((p) => (
-                            <div key={p.userId} className={`participant-item ${p.isBot ? 'bot' : 'human'}`}>
-                                <span className="participant-icon">{p.isBot ? '🤖' : '👤'}</span>
-                                <span className="participant-name">{p.username}</span>
-                                {p.hasBoost && <span className="boost-badge">⚡</span>}
-                                {winner && winner.userId === p.userId && (
-                                    <span className="winner-badge">🏆</span>
+                        {participants.map((participant) => (
+                            <div
+                                key={participant.userId ?? participant.username}
+                                className={`participant-item ${participant.isBot ? 'bot' : 'human'}`}
+                            >
+                                <span className="participant-icon">{participant.isBot ? 'Bot' : 'User'}</span>
+                                <span className="participant-name">{participant.username}</span>
+                                {participant.hasBoost && <span className="boost-badge">Boost</span>}
+                                {winner && winner.userId === participant.userId && (
+                                    <span className="winner-badge">Winner</span>
                                 )}
                             </div>
                         ))}
-                        {Array.from({ length: freeSeats }).map((_, idx) => (
-                            <div key={`empty-${idx}`} className="participant-item empty">
-                                <span className="participant-icon">⬤</span>
+                        {Array.from({ length: freeSeats }).map((_, index) => (
+                            <div key={`empty-${index}`} className="participant-item empty">
+                                <span className="participant-icon">Empty</span>
                                 <span className="participant-name">Свободное место</span>
                             </div>
                         ))}
                     </div>
+
                     <div className="room-actions">
-                        {isWaiting && (
-                            <>
-                                {!userIsParticipant && (
-                                    <button
-                                        className="join-btn"
-                                        onClick={handleJoin}
-                                        disabled={actionLoading || !canJoin}
-                                    >
-                                        {actionLoading ? '...' : '🎟️ Присоединиться'}
-                                    </button>
-                                )}
-                                {userIsParticipant && (
-                                    <>
-                                        <button
-                                            className="leave-btn"
-                                            onClick={handleLeave}
-                                            disabled={actionLoading}
-                                        >
-                                            🚪 Покинуть
-                                        </button>
-                                        {canStart && (
-                                            <button
-                                                className="start-game-btn"
-                                                onClick={handleStartGame}
-                                                disabled={actionLoading}
-                                            >
-                                                🎮 Начать игру
-                                            </button>
-                                        )}
-                                    </>
-                                )}
-                            </>
+                        {isWaiting && !userIsParticipant && (
+                            <button
+                                className="join-btn"
+                                onClick={handleJoin}
+                                disabled={actionLoading || !canJoin}
+                            >
+                                {actionLoading ? '...' : 'Присоединиться'}
+                            </button>
                         )}
+
+                        {isWaiting && userIsParticipant && room.boostEnabled && (
+                            <button
+                                className="boost-btn"
+                                onClick={handleActivateBoost}
+                                disabled={actionLoading || !canActivateBoost}
+                            >
+                                {currentUserParticipant?.hasBoost
+                                    ? 'Буст активирован'
+                                    : `Купить и активировать за ${room.boostCost ?? 0}`}
+                            </button>
+                        )}
+
                         {isFinished && winner && (
                             <div className="game-result">
                                 <p>Победитель: {winner.username}</p>
@@ -175,6 +372,7 @@ const GameRoomPage = () => {
                     {isWaiting ? (
                         <div className="waiting-area">
                             <p>Ожидание игроков...</p>
+                            <p className="hint">До автозапуска: {displaySecondsLeft} c</p>
                             {!userIsParticipant && (
                                 <p className="hint">Присоединитесь, чтобы участвовать</p>
                             )}
@@ -186,7 +384,7 @@ const GameRoomPage = () => {
                                 <div className="winner-announcement">
                                     <p>Победитель:</p>
                                     <div className="winner-details">
-                                        <span className="winner-icon">{winner.isBot ? '🤖' : '👤'}</span>
+                                        <span className="winner-icon">{winner.isBot ? 'Bot' : 'User'}</span>
                                         <span className="winner-name">{winner.username}</span>
                                     </div>
                                 </div>
@@ -197,6 +395,25 @@ const GameRoomPage = () => {
                     )}
                 </div>
             </div>
+
+            <button
+                type="button"
+                className="details-toggle-btn"
+                onClick={() => setDetailsOpen((prev) => !prev)}
+            >
+                {detailsOpen ? 'Скрыть информацию о комнате' : 'Показать информацию о комнате'}
+            </button>
+
+            {detailsOpen && (
+                <section className="room-debug-panel">
+                    {roomDetails.map((item) => (
+                        <article key={item.label} className="room-debug-card">
+                            <span>{item.label}</span>
+                            <strong>{item.value}</strong>
+                        </article>
+                    ))}
+                </section>
+            )}
         </div>
     );
 };
