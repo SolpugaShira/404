@@ -83,21 +83,7 @@ button:disabled {
   opacity: 0.55;
 }
 
-.background-glow--one {
-  width: 24rem;
-  height: 24rem;
-  left: -8rem;
-  top: 5rem;
-  background: rgba(77, 137, 255, 0.18);
-}
 
-.background-glow--two {
-  width: 22rem;
-  height: 22rem;
-  right: -6rem;
-  top: 12rem;
-  background: rgba(36, 184, 143, 0.16);
-}
 
 .app {
   position: relative;
@@ -117,8 +103,6 @@ button:disabled {
   border: 1px solid rgba(138, 167, 204, 0.28);
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 20px 50px rgba(120, 149, 184, 0.16);
 }
 
 
@@ -308,28 +292,46 @@ nav a {
   background-image: url('./assets/популярное 1.svg');
 }
 .GOLF-2{
-  background-image: url('./assets/популярное 1.svg');
+  background-image: url('./assets/популярное 1-1.svg');
 }
 .GOLF-3{
-  background-image: url('./assets/популярное 1.svg');
+  background-image: url('./assets/популярное 1-2.svg');
 }
 .GOLF-4{
-  background-image: url('./assets/популярное 1.svg');
+  background-image: url('./assets/популярное 7-1.svg');
 }
 .GOLF-5{
-  background-image: url('./assets/популярное 1.svg');
+  background-image: url('./assets/популярное 7.svg');
 }
 .GOLF-6{
-  background-image: url('./assets/популярное 1.svg');
+  background-image: url('./assets/популярное 7-2.svg');
 }
 .GOLF-7{
-  background-image: url('./assets/популярное 1.svg');
+  background-image: url('./assets/популярное 8.svg');
 }
 .TENNIS-1{
-  background-image: url('./assets/популярное 1.svg');
+  background-image: url('./assets/теннис.svg');
+}
+.TENNIS-2{
+  background-image: url('./assets/теннис-3.svg');
+}
+.TENNIS-3{
+  background-image: url('./assets/теннис-5.svg');
 }
 .RACING-1{
-  background-image: url('./assets/популярное 1.svg');
+  background-image: url('./assets/популярное 10-1.svg');
+}
+.RACING-2{
+  background-image: url('./assets/популярное 10-2.svg');
+}
+.RACING-2{
+  background-image: url('./assets/популярное 10-2.svg');
+}
+.RACING-3{
+  background-image: url('./assets/популярное 12.svg');
+}
+.RACING-4{
+  background-image: url('./assets/популярное 13.svg');
 }
 
 .room-card:hover {
@@ -443,8 +445,8 @@ nav a {
 }
 
 .auth-switcher__tab.active {
-  color: #fdfefe;
-  background: linear-gradient(135deg, #4d89ff, #3566cf);
+  color: white;
+  background: white;
   border-color: transparent;
 }
 
@@ -531,7 +533,7 @@ nav a {
   gap: 0.75rem;
   padding: 0.85rem;
   border-radius: 16px;
-  background: rgba(92, 127, 172, 0.07);
+  background: white;
 }
 
 .participant-item.human {
