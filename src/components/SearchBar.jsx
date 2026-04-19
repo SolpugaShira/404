@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { useUser } from '../context/useUser';
-import { fetchServerRoot, HTTP_BASE_URL_LABEL } from '../api/http';
 import filtr from '../assets/Icon.svg';
 
 const SearchBar = ({ value, onChange }) => {
-    const { user, logoutUser } = useUser();
+    const { user } = useUser();
     return (
         <div className="search-bar">
             <nav><input
@@ -16,7 +14,7 @@ const SearchBar = ({ value, onChange }) => {
             />
             <img  src={filtr} style = {{position: "relative", right: '80px'}}/>
             <div className="user-balance">бонусы: {user.balance}</div>
-            <Link to="/account" style={{color:'black', }}>профиль</Link></nav>
+            <Link to="/account" style={{color:'black', padding:'0 0 0 20px' }}>профиль</Link></nav>
         </div>
     );
 };
