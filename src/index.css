@@ -21,13 +21,10 @@
   font-family: 'Neue Machina', 'Segoe UI', 'Trebuchet MS', system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #1c2838;
-  background: #ffffff;  /* белый фон вместо градиента */
+  color: white;
+  background: #ffffff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color-scheme: light;
 }
 
 * {
@@ -43,7 +40,7 @@ body,
 body {
   margin: 0;
   min-width: 320px;
-  color: #1c2838;
+  color: black;
 }
 
 a {
@@ -61,7 +58,6 @@ button {
   border-radius: 14px;
   padding: 0.9rem 1.2rem;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
 }
 
 button:hover:not(:disabled) {
@@ -125,33 +121,24 @@ button:disabled {
   box-shadow: 0 20px 50px rgba(120, 149, 184, 0.16);
 }
 
-.eyebrow {
-  margin-bottom: 0.35rem;
-  color: #287d66;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 0.74rem;
-}
+
 
 nav {
   display: flex;
   gap: 0.75rem;
-  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
 }
 
 nav a {
-  padding: 0.65rem 0.9rem;
-  border-radius: 999px;
+  padding: 0 0 0 10px;
   text-decoration: none;
-  color: #324a65;
-  background: rgba(92, 127, 172, 0.08);
-  border: 1px solid rgba(138, 167, 204, 0.18);
+  font-size: 26px;
+  color: black;
 }
 
-nav a:hover {
-  border-color: rgba(36, 184, 143, 0.32);
-  background: rgba(36, 184, 143, 0.08);
-}
+
 
 .header-side {
   display: flex;
@@ -220,18 +207,19 @@ nav a:hover {
   color: #667a93;
   font-size: 0.85rem;
 }
+.user-balance{
+  font-size: 26px;
+  flex-wrap: nowrap;
 
+}
 .user-balance,
 .heading-chip {
+  padding: 0 0 0 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 46px;
-  padding: 0.75rem 1rem;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(77, 137, 255, 0.14), rgba(36, 184, 143, 0.16));
-  border: 1px solid rgba(77, 137, 255, 0.2);
-  font-weight: 700;
+  font-weight: bold;
 }
 
 .logout-btn {
@@ -268,12 +256,12 @@ nav a:hover {
 }
 
 .search-bar input {
-  width: 100%;
+  width: 65%;
   padding: 1rem 1.1rem;
-  border-radius: 18px;
-  border: 1px solid rgba(138, 167, 204, 0.24);
-  color: #203146;
-  background: rgba(255, 255, 255, 0.88);
+  border-radius: 60px;
+  border: 1px solid black;
+  color: white;
+  background: white;
   outline: none;
 }
 
@@ -303,13 +291,13 @@ nav a:hover {
 .room-debug-card {
   border: 1px solid rgba(138, 167, 204, 0.18);
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 20px 45px rgba(120, 149, 184, 0.16);
+  background: white;
+  box-shadow: none;
 }
 
 .room-card {
   z-index: -1;
-  border-radius: 80px ;
+  border-radius: 90px ;
   width: 268px;
   height: 236px;
   padding: 1.6rem;
@@ -396,12 +384,12 @@ nav a:hover {
 
 
 .status-badge.waiting {
-  background: rgba(36, 184, 143, 0.14);
+  background: white;
   color: white;
 }
 
 .status-badge.finished {
-  background: rgba(92, 127, 172, 0.09);
+  background: white;
   color: white;
 }
 
@@ -427,8 +415,8 @@ nav a:hover {
   padding: 2rem;
   border: 1px solid rgba(138, 167, 204, 0.18);
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 24px 60px rgba(120, 149, 184, 0.18);
+  background: white;
+  box-shadow: none;
 }
 
 .auth-card h1 {
@@ -790,7 +778,7 @@ nav a:hover {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.6);
+  background: white;
   border: none;
   color: white;
   font-size: 24px;
@@ -803,7 +791,7 @@ nav a:hover {
 
 .scroll-btn:hover {
   transform: translateY(-50%) !important; /* фиксируем позицию */
-  background: rgba(0, 0, 0, 0.9);
+  background: white;
 }
 .scroll-btn-left {
   left: 0;
@@ -821,7 +809,7 @@ nav a:hover {
   background: #f1f1f1;
 }
 .rooms-grid-horizontal::-webkit-scrollbar-thumb {
-  background: #888;
+  background: white;
   border-radius: 3px;
 }
 .rooms-grid-horizontal {
@@ -855,7 +843,7 @@ nav a:hover {
   margin: 0 0 1rem 0;
   font-size: 1.6rem;
   padding-left: 0.5rem;
-  border-left: 4px solid #24b88f;
+  font-weight: bold;
 }
 
 .scroll-wrapper {
@@ -889,10 +877,10 @@ nav a:hover {
 .scroll-btn {
   position: relative;
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: white;
   border: none;
-  color: white;
-  font-size: 24px;
+  color: black;
+  font-size: 40px;
   cursor: pointer;
   padding: 10px 12px;
   border-radius: 50%;
@@ -906,7 +894,7 @@ nav a:hover {
 }
 
 .scroll-btn:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.9);
+  background: white;
   transform: none; /* отключаем глобальный подъём */
 }
 

@@ -50,7 +50,6 @@ const Layout = () => {
             <div className="app">
                 <header className="site-header">
                     <div>
-                        <div className="eyebrow">Rooms And Games</div>
                         <nav>
                             <Link to="/">Комнаты</Link>
                             <Link to="/account">Профиль</Link>
@@ -70,7 +69,7 @@ const Layout = () => {
                                 {user.stats?.gamesPlayed ?? 0} игр
                             </span>
                         </div>
-                        <div className="user-balance">{user.balance} бонусов</div>
+                        <div className="user-balance">бонусы: {user.balance} </div>
                         <button type="button" className="logout-btn" onClick={() => logoutUser()}>
                             Выйти
                         </button>

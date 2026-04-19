@@ -23,6 +23,21 @@ const HorizontalScrollSection = ({ title, items, renderItem, emptyMessage = "Н�
         });
         setTimeout(updateScrollButtons, 300);
     };
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const handleWheel = (e) => {
+            // Если прокрутка вертикальная, прокручиваем горизонтально
+            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                e.preventDefault(); // предотвращаем вертикальную прокрутку страницы
+                container.scrollLeft += e.deltaY; // используем вертикальное вращение для горизонтали
+            }
+        };
+
+        container.addEventListener('wheel', handleWheel, { passive: false });
+        return () => container.removeEventListener('wheel', handleWheel);
+    }, []);
 
     useEffect(() => {
         updateScrollButtons();
@@ -41,7 +56,7 @@ const HorizontalScrollSection = ({ title, items, renderItem, emptyMessage = "Н�
                     onClick={() => scroll('left')}
                     disabled={!canScrollLeft}
                 >
-                    &lt;
+                    ❬
                 </button>
                 <div
                     className="scroll-container"
@@ -63,7 +78,7 @@ const HorizontalScrollSection = ({ title, items, renderItem, emptyMessage = "Н�
                     onClick={() => scroll('right')}
                     disabled={!canScrollRight}
                 >
-                    &gt;
+                    ❭
                 </button>
             </div>
         </div>

@@ -95,15 +95,6 @@ const HomePage = () => {
 
     return (
         <div className="home-page">
-            <section className="page-heading">
-                <div>
-                    <div className="eyebrow">Лобби</div>
-                    <h1>Игровые комнаты</h1>
-                    <p>После завершения игры стол исчезает из списка и моментально заменяется новым.</p>
-                </div>
-                <div className="heading-chip">{rooms.length} активных комнат</div>
-            </section>
-
             <SearchBar value={searchTerm} onChange={setSearchTerm} />
 
             {loading ? (
