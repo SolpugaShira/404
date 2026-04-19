@@ -31,7 +31,8 @@ body {
 }
 
 a {
-  color: inherit;
+  color: white;
+  font-family: "Lucida Sans Unicode";
 }
 
 button,
@@ -89,7 +90,7 @@ button:disabled {
 .app {
   position: relative;
   z-index: 1;
-  width: min(1200px, calc(100% - 32px));
+  width: min(1600px, calc(100% - 32px));
   margin: 0 auto;
   padding: 24px 0 48px;
 }
@@ -291,8 +292,40 @@ nav a:hover {
 }
 
 .room-card {
-  padding: 1.2rem;
+  z-index: -1;
+  border-radius: 80px ;
+  width: 268px;
+  height: 236px;
+  padding: 1.6rem;
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.GOLF-1{
+  background-image: url('./assets/популярное 1.svg');
+}
+.GOLF-2{
+  background-image: url('./assets/популярное 1.svg');
+}
+.GOLF-3{
+  background-image: url('./assets/популярное 1.svg');
+}
+.GOLF-4{
+  background-image: url('./assets/популярное 1.svg');
+}
+.GOLF-5{
+  background-image: url('./assets/популярное 1.svg');
+}
+.GOLF-6{
+  background-image: url('./assets/популярное 1.svg');
+}
+.GOLF-7{
+  background-image: url('./assets/популярное 1.svg');
+}
+.TENNIS-1{
+  background-image: url('./assets/популярное 1.svg');
+}
+.RACING-1{
+  background-image: url('./assets/популярное 1.svg');
 }
 
 .room-card:hover {
@@ -305,7 +338,14 @@ nav a:hover {
 }
 
 .room-card h3 {
-  margin: 0 0 0.8rem;
+  margin: 0 0 0.1rem 0;
+  font-size: 24px;
+}
+
+.Users{
+  display: flex;
+  justify-content: end;
+  align-items: end;
 }
 
 .room-info,
@@ -313,15 +353,21 @@ nav a:hover {
 .profile-summary,
 .history-item {
   display: flex;
-  gap: 0.9rem;
-  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+
 }
 
 .room-info {
+  height: 80%;
+  flex-direction: row;
   justify-content: space-between;
 }
+.Users{
+  margin-top: auto;
+  font-size: 24px;
+}
 
-.room-status,
 .participant-badge,
 .status-badge,
 .history-item__result {
@@ -332,20 +378,15 @@ nav a:hover {
   font-size: 0.82rem;
 }
 
-.room-status,
-.participant-badge {
-  background: rgba(92, 127, 172, 0.09);
-  color: #36506b;
-}
 
 .status-badge.waiting {
   background: rgba(36, 184, 143, 0.14);
-  color: #1f8b6f;
+  color: white;
 }
 
 .status-badge.finished {
   background: rgba(92, 127, 172, 0.09);
-  color: #667a93;
+  color: white;
 }
 
 .game-room-page,
@@ -729,3 +770,65 @@ nav a:hover {
     align-items: flex-start;
   }
 }
+.scroll-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 10px 12px;
+  border-radius: 50%;
+  z-index: 2;
+  transition: background 0.2s ease;
+}
+
+.scroll-btn:hover {
+  transform: translateY(-50%) !important; /* фиксируем позицию */
+  background: rgba(0, 0, 0, 0.9);
+}
+.scroll-btn-left {
+  left: 0;
+}
+.scroll-btn-right {
+  right: 0;
+}
+.rooms-grid-horizontal {
+  scrollbar-width: thin; /* для Firefox */
+}
+.rooms-grid-horizontal::-webkit-scrollbar {
+  height: 6px;
+}
+.rooms-grid-horizontal::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.rooms-grid-horizontal::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+.rooms-grid-horizontal {
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.rooms-grid-horizontal::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+.rooms-grid-horizontal {
+  display: flex;
+  overflow-x: auto;
+  gap: 20px;
+  padding: 16px 60px; /* чтобы крайние карточки не заезжали под кнопки */
+  scroll-behavior: smooth;
+}
+
+.scroll-btn-left {
+  left: 10px; /* кнопка всё равно поверх, но не загораживает карточку */
+}
+.scroll-btn-right {
+  right: 10px;
+}
+
+
