@@ -1,18 +1,17 @@
-// components/HorizontalScrollSection.jsx
 import { useRef, useState, useEffect } from 'react';
 
-const HorizontalScrollSection = ({ title, items, renderItem, emptyMessage = "Нет элементов" }) => {
+const HorizontalScrollSection = ({ title, items, renderItem, emptyMessage = "Нет комнат" }) => {
     const containerRef = useRef(null);
-    const [showLeftArrow, setShowLeftArrow] = useState(false);
-    const [showRightArrow, setShowRightArrow] = useState(true);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(true);
 
     const updateScrollButtons = () => {
         const container = containerRef.current;
         if (!container) return;
         const scrollLeft = container.scrollLeft;
         const maxScrollLeft = container.scrollWidth - container.clientWidth;
-        setShowLeftArrow(scrollLeft > 5);
-        setShowRightArrow(scrollLeft < maxScrollLeft - 5);
+        setCanScrollLeft(scrollLeft > 5);
+        setCanScrollRight(scrollLeft < maxScrollLeft - 5);
     };
 
     const scroll = (direction) => {
@@ -37,11 +36,13 @@ const HorizontalScrollSection = ({ title, items, renderItem, emptyMessage = "Н�
                 <h2>{title}</h2>
             </div>
             <div className="scroll-wrapper">
-                {showLeftArrow && (
-                    <button className="scroll-btn scroll-btn-left" onClick={() => scroll('left')}>
-                        ◀
-                    </button>
-                )}
+                <button
+                    className="scroll-btn scroll-btn-left"
+                    onClick={() => scroll('left')}
+                    disabled={!canScrollLeft}
+                >
+                    &lt;
+                </button>
                 <div
                     className="scroll-container"
                     ref={containerRef}
@@ -57,11 +58,13 @@ const HorizontalScrollSection = ({ title, items, renderItem, emptyMessage = "Н�
                         ))
                     )}
                 </div>
-                {showRightArrow && (
-                    <button className="scroll-btn scroll-btn-right" onClick={() => scroll('right')}>
-                        ▶
-                    </button>
-                )}
+                <button
+                    className="scroll-btn scroll-btn-right"
+                    onClick={() => scroll('right')}
+                    disabled={!canScrollRight}
+                >
+                    &gt;
+                </button>
             </div>
         </div>
     );

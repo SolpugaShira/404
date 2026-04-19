@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import RoomCard from '../components/RoomCard';
 import SearchBar from '../components/SearchBar';
+import HorizontalScrollSection from '../components/HorizontalScrollSection';
 import { fetchRooms, normalizeRoomsMessage } from '../api/roomsApi';
 import { getStompClient, onStompConnectionChange } from '../stompClient';
 
@@ -8,35 +9,8 @@ const HomePage = () => {
     const [rooms, setRooms] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
-    const scrollContainerRef = useRef(null);
-    const [showLeftArrow, setShowLeftArrow] = useState(false);
-    const [showRightArrow, setShowRightArrow] = useState(true);
 
-    // Проверка положения скролла для отображения кнопок
-    const updateScrollButtons = () => {
-        const container = scrollContainerRef.current;
-        if (!container) return;
-        const scrollLeft = container.scrollLeft;
-        const maxScrollLeft = container.scrollWidth - container.clientWidth;
-        setShowLeftArrow(scrollLeft > 5);
-        setShowRightArrow(scrollLeft < maxScrollLeft - 5);
-    };
-
-    const scrollRight = () => {
-        if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
-            // Обновим состояние кнопок после анимации (setTimeout)
-            setTimeout(updateScrollButtons, 300);
-        }
-    };
-
-    const scrollLeft = () => {
-        if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
-            setTimeout(updateScrollButtons, 300);
-        }
-    };
-
+    // Загрузка комнат и подписка WebSocket (как было)
     useEffect(() => {
         let cancelled = false;
 
@@ -60,10 +34,7 @@ const HomePage = () => {
         loadRooms();
 
         const subscribeToRooms = (client) => {
-            if (!client?.connected) {
-                return undefined;
-            }
-
+            if (!client?.connected) return undefined;
             return client.subscribe('/topic/rooms', (message) => {
                 try {
                     setRooms(normalizeRoomsMessage(JSON.parse(message.body)));
@@ -86,21 +57,41 @@ const HomePage = () => {
         };
     }, []);
 
-    // При обновлении комнат или загрузке перепроверяем кнопки
-    useEffect(() => {
-        if (!loading) {
-            updateScrollButtons();
-        }
-    }, [rooms, loading]);
-
-    const filteredRooms = rooms.filter((room) => {
+    // Фильтрация по поиску (общая для всех категорий)
+    const filteredBySearch = rooms.filter((room) => {
         const searchLower = searchTerm.toLowerCase();
         return (
-            room.id.toLowerCase().includes(searchLower) ||
-            room.name.toLowerCase().includes(searchLower) ||
-            room.description.toLowerCase().includes(searchLower)
+            room.id?.toLowerCase().includes(searchLower) ||
+            room.name?.toLowerCase().includes(searchLower) ||
+            room.description?.toLowerCase().includes(searchLower)
         );
     });
+
+    // Определение категорий
+    const getGameType = (theme) => {
+        if (!theme) return null;
+        // theme имеет вид "GOLF-1", "TENNIS-2", "RACING-3" – убираем последние два символа (дефис и цифру)
+        const base = theme.slice(0, -2);
+        if (base === 'GOLF' || base === 'TENNIS' || base === 'RACING') {
+            return base;
+        }
+        return null;
+    };
+
+    // Категория "Популярное" – все отфильтрованные комнаты
+    const popularRooms = filteredBySearch;
+
+    // Категория "Большой выигрыш" – все отфильтрованные комнаты, сортировка по currentPrizePool (по убыванию)
+    const bigWinRooms = [...filteredBySearch].sort((a, b) => {
+        const prizeA = a.currentPrizePool ?? 0;
+        const prizeB = b.currentPrizePool ?? 0;
+        return prizeB - prizeA;
+    });
+
+    // Категории по типам игр
+    const golfRooms = filteredBySearch.filter(room => getGameType(room.theme) === 'GOLF');
+    const tennisRooms = filteredBySearch.filter(room => getGameType(room.theme) === 'TENNIS');
+    const racingRooms = filteredBySearch.filter(room => getGameType(room.theme) === 'RACING');
 
     return (
         <div className="home-page">
@@ -108,62 +99,52 @@ const HomePage = () => {
                 <div>
                     <div className="eyebrow">Лобби</div>
                     <h1>Игровые комнаты</h1>
+                    <p>После завершения игры стол исчезает из списка и моментально заменяется новым.</p>
                 </div>
                 <div className="heading-chip">{rooms.length} активных комнат</div>
             </section>
+
             <SearchBar value={searchTerm} onChange={setSearchTerm} />
 
             {loading ? (
                 <div className="loading">Загрузка комнат...</div>
             ) : (
-                <div style={{ position: 'relative' }}>
-                    {/* Кнопки прокрутки */}
-                    {showLeftArrow && (
-                        <button
-                            className="scroll-btn scroll-btn-left"
-                            onClick={scrollLeft}
-                            aria-label="Прокрутить влево"
-                        >
-                            ◀
-                        </button>
-                    )}
-                    {showRightArrow && (
-                        <button
-                            className="scroll-btn scroll-btn-right"
-                            onClick={scrollRight}
-                            aria-label="Прокрутить вправо"
-                        >
-                            ▶
-                        </button>
-                    )}
+                <>
+                    <HorizontalScrollSection
+                        title="Популярное"
+                        items={popularRooms}
+                        renderItem={(room) => <RoomCard room={room} />}
+                        emptyMessage="Нет доступных комнат"
+                    />
 
-                    {/* Горизонтальный контейнер */}
-                    <div
-                        className="rooms-grid-horizontal"
-                        ref={scrollContainerRef}
-                        onScroll={updateScrollButtons}
-                        style={{
-                            display: 'flex',
-                            overflowX: 'auto',
-                            gap: '20px',
-                            padding: '16px 8px',
-                            scrollBehavior: 'smooth',
-                            // Скрываем стандартный скроллбар (опционально, но лучше оставить для доступности)
-                            // scrollbarWidth: 'thin',
-                        }}
-                    >
-                        {filteredRooms.map((room) => (
-                            <div key={room.id} style={{ flex: '0 0 auto', width: '280px' }}>
-                                <RoomCard room={room} />
-                            </div>
-                        ))}
-                        {filteredRooms.length === 0 && (
-                            <div style={{ padding: '20px', textAlign: 'center', width: '100%' }}>
-                                Нет комнат, соответствующих поиску
-                            </div>
-                        )}
-                    </div>
-                </div>
+                    <HorizontalScrollSection
+                        title="Большой выигрыш"
+                        items={bigWinRooms}
+                        renderItem={(room) => <RoomCard room={room} />}
+                        emptyMessage="Нет комнат с крупным призовым фондом"
+                    />
+
+                    <HorizontalScrollSection
+                        title="Гольф"
+                        items={golfRooms}
+                        renderItem={(room) => <RoomCard room={room} />}
+                        emptyMessage="Нет активных комнат для гольфа"
+                    />
+
+                    <HorizontalScrollSection
+                        title="Теннис"
+                        items={tennisRooms}
+                        renderItem={(room) => <RoomCard room={room} />}
+                        emptyMessage="Нет активных комнат для тенниса"
+                    />
+
+                    <HorizontalScrollSection
+                        title="Гонки"
+                        items={racingRooms}
+                        renderItem={(room) => <RoomCard room={room} />}
+                        emptyMessage="Нет активных комнат для гонок"
+                    />
+                </>
             )}
         </div>
     );

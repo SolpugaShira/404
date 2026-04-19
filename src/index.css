@@ -1,12 +1,28 @@
+@font-face {
+  font-family: 'Neue Machina';
+  src: url('./fonts/PPNeueMachina-Regular.otf') format('opentype'),
+  url('./fonts/PPNeueMachina-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Machina';
+  src: url('./fonts/PPNeueMachina-Regular.otf') format('otf'),
+  url('./fonts/PPNeueMachina-Ultrabold.otf') format('otf');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+
 :root {
-  font-family: "Segoe UI", "Trebuchet MS", system-ui, sans-serif;
+  font-family: 'Neue Machina', 'Segoe UI', 'Trebuchet MS', system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color: #1c2838;
-  background:
-    radial-gradient(circle at top left, rgba(77, 137, 255, 0.16), transparent 28%),
-    radial-gradient(circle at top right, rgba(36, 184, 143, 0.14), transparent 22%),
-    linear-gradient(180deg, #f7fbff 0%, #eef5fb 48%, #e8f0f8 100%);
+  background: #ffffff;  /* белый фон вместо градиента */
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -32,7 +48,7 @@ body {
 
 a {
   color: white;
-  font-family: "Lucida Sans Unicode";
+  font-family: "Neue Machina";
 }
 
 button,
@@ -831,4 +847,77 @@ nav a:hover {
   right: 10px;
 }
 
+.horizontal-section {
+  margin-bottom: 2rem;
+}
 
+.section-header h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.6rem;
+  padding-left: 0.5rem;
+  border-left: 4px solid #24b88f;
+}
+
+.scroll-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scroll-container {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 8px 4px 16px 4px;
+  scroll-behavior: smooth;
+  /* Скрываем скроллбары */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.scroll-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
+.scroll-item {
+  flex: 0 0 auto;
+  width: 280px; /* под размер RoomCard */
+}
+
+.scroll-btn {
+  position: relative;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 10px 12px;
+  border-radius: 50%;
+  transition: background 0.2s ease, opacity 0.2s ease;
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scroll-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.9);
+  transform: none; /* отключаем глобальный подъём */
+}
+
+.scroll-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.empty-message {
+  padding: 2rem;
+  text-align: center;
+  color: #73859d;
+  width: 100%;
+}
