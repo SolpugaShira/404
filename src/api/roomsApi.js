@@ -40,7 +40,7 @@ const normalizeSessionUpdate = (session) => {
         participants,
         currentParticipants: session.currentParticipants ?? participants.length,
         currentPrizePool: session.currentPrizePool ?? 0,
-        timerStartedAt: session.timerStartedAt ?? null,
+        timerStartedAt: session.timerStartedAt ?? 60,
         secondsLeft: session.secondsLeft ?? 0,
         result: normalizeRoundResult(session.result),
     };

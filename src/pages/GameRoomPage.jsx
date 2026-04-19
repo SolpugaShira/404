@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import {data, useNavigate, useParams} from 'react-router-dom';
 import {
     activateBoost,
     fetchRoomById,
@@ -90,12 +90,14 @@ const GameRoomPage = () => {
             }
 
             if (!room.timerStartedAt) {
-                return Math.max(room.secondsLeft ?? 0, 0);
+                return Math.max(room.secondsLeft ?? 60, 60);
             }
 
-            const elapsedSeconds = Math.floor((Date.now() - room.timerStartedAt) / 1000);
-            const initialSecondsLeft = room.secondsLeft ?? 60;
-            return Math.max(initialSecondsLeft - elapsedSeconds, 0);
+            let seconds = (- Date.now() + room.timerStartedAt)/1000 +60;
+
+            // const elapsedSeconds = Math.floor((Date.now() - room.timerStartedAt) / 1000);
+            // const initialSecondsLeft = room.secondsLeft ?? seconds;
+            return Math.round(Math.max(seconds, 0));
         };
 
         setDisplaySecondsLeft(calculateSecondsLeft());
@@ -111,8 +113,8 @@ const GameRoomPage = () => {
         return () => {
             window.clearInterval(intervalId);
         };
-    }, [room]);
-
+    });
+    useEffect((winner) => (winner), [displaySecondsLeft]);
     useEffect(() => {
         let cancelled = false;
 
@@ -324,7 +326,7 @@ const GameRoomPage = () => {
                                 <span className="participant-icon">{participant.isBot ? 'Bot' : 'User'}</span>
                                 <span className="participant-name">{participant.username}</span>
                                 {participant.hasBoost && <span className="boost-badge">Boost</span>}
-                                {winner && winner.userId === participant.userId && (
+                                {winner && winner.username === participant.username && (
                                     <span className="winner-badge">Winner</span>
                                 )}
                             </div>
@@ -352,7 +354,7 @@ const GameRoomPage = () => {
                             <button
                                 className="boost-btn"
                                 onClick={handleActivateBoost}
-                                disabled={actionLoading || !canActivateBoost}
+                                disabled={!canActivateBoost}
                             >
                                 {currentUserParticipant?.hasBoost
                                     ? 'Буст активирован'
@@ -372,6 +374,7 @@ const GameRoomPage = () => {
                     {isWaiting ? (
                         <div className="waiting-area">
                             <p>Ожидание игроков...</p>
+                            {/*<p>{data.length}</p>*/}
                             <p className="hint">До автозапуска: {displaySecondsLeft} c</p>
                             {!userIsParticipant && (
                                 <p className="hint">Присоединитесь, чтобы участвовать</p>
