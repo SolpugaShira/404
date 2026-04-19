@@ -7,7 +7,7 @@ const RoomCard = ({ room }) => {
     const isWaiting = status === 'WAITING' || status === 'FILLING';
     // if (theme.slice(0,-2) === "golf"){}
     return (
-        <Link to={`/room/${id}`} className="room-card-link">
+        <Link to={`/room/${room.id}/lobby`} className="room-card-link">
             <div className={`room-card ${!isWaiting ? 'disabled-room' : ''} ${theme ?? 'GOLF-1'} `}>
                 <h3>{name}</h3>
                 <div className="room-info">
