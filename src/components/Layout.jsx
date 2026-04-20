@@ -15,18 +15,16 @@ const Layout = () => {
 
         const loadServerState = async () => {
             try {
-                const response = await fetchServerRoot();
+                await fetchServerRoot();
                 if (cancelled) {
                     return;
                 }
 
                 setServerState({
-                    label: typeof response === 'string' && response.trim()
-                        ? response
-                        : 'Сервер доступен',
+                    label: 'Сервер доступен',
                     online: true,
                 });
-            } catch (error) {
+            } catch {
                 if (!cancelled) {
                     setServerState({
                         label: 'Нет соединения с сервером',

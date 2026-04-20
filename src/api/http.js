@@ -55,6 +55,6 @@ export const request = async (path, options = {}) => {
     return payload;
 };
 
-export const fetchServerRoot = async () => request('/api/v1/rooms', {
+export const fetchServerRoot = async () => request('/api/v1/health', {
     method: 'GET',
 });
