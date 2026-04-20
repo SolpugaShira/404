@@ -87,25 +87,6 @@ const GamePage = () => {
         return mergedRoom;
     }, []);
 
-    const refreshRoomState = useCallback(async () => {
-        try {
-            const data = await fetchRoomById(roomId);
-            if (!mountedRef.current) return null;
-            setRoom((prev) => mergeStableRoomState(data, prev));
-
-            if (data?.status === 'COMPLETED') {
-                const latestWinner = data.result ?? (await fetchWinnerByRoomId(roomId).catch(() => null));
-                if (mountedRef.current) setWinner(latestWinner);
-            } else {
-                if (mountedRef.current) setWinner(null);
-            }
-            return data;
-        } catch (err) {
-            console.error('[GamePage] refreshRoomState error:', err);
-            throw err;
-        }
-    }, [roomId, mergeStableRoomState]);
-
     // Таймер обратного отсчёта
     useEffect(() => {
         if (!room || room.status === 'COMPLETED') {
@@ -183,6 +164,7 @@ const GamePage = () => {
                     return;
                 }
                 if (typeof subscription.unsubscribe === 'function') {
+                    console.log('[WS][UNSUBSCRIBE] GamePage subscription');
                     subscription.unsubscribe();
                 }
             } catch (e) {
@@ -201,15 +183,18 @@ const GamePage = () => {
 
         const subscribeToTopics = (client) => {
             if (!client?.connected) {
-                console.warn('[GamePage] STOMP client not connected, skipping subscriptions');
+                console.warn('[WS] disconnected: skip GamePage subscriptions');
                 return;
             }
 
             unsubscribeAll();
 
             try {
-                const sessionSub = client.subscribe(`/topic/session/${roomId}`, (message) => {
+                const sessionDestination = `/topic/session/${roomId}`;
+                console.log(`[WS][SUBSCRIBE] ${sessionDestination}`);
+                const sessionSub = client.subscribe(sessionDestination, (message) => {
                     try {
+                        console.log(`[WS][MESSAGE] ${sessionDestination}`, message.body);
                         const payload = JSON.parse(message.body);
                         if (!mountedRef.current) return;
 
@@ -231,8 +216,11 @@ const GamePage = () => {
                     }
                 });
 
-                const roundSub = client.subscribe(`/topic/round/${roomId}`, (message) => {
+                const roundDestination = `/topic/round/${roomId}`;
+                console.log(`[WS][SUBSCRIBE] ${roundDestination}`);
+                const roundSub = client.subscribe(roundDestination, (message) => {
                     try {
+                        console.log(`[WS][MESSAGE] ${roundDestination}`, message.body);
                         if (mountedRef.current) {
                             setWinner(normalizeRoundMessage(JSON.parse(message.body)));
                         }
@@ -270,7 +258,7 @@ const GamePage = () => {
         setActionLoading(true);
         try {
             await activateBoost(roomId, user.id);
-            await Promise.all([refreshRoomState(), refreshUser()]);
+            await refreshUser();
             setError(null);
         } catch (err) {
             setError(err.message);

@@ -88,29 +88,16 @@ const normalizeRoundResult = (result) => (
         : null
 );
 
-const sendWithCallback = (destination, body, callback) => {
+const publishRoomCommand = (destination, body = {}) => {
     const client = getStompClient();
 
     if (!client?.connected) {
-        callback({ error: 'Not connected' });
-        return;
+        throw new Error('WebSocket is not connected');
     }
 
-    const replyTo = `/user/queue/reply-${Date.now()}`;
-    const subscription = client.subscribe(replyTo, (message) => {
-        subscription.unsubscribe();
-
-        try {
-            const response = JSON.parse(message.body);
-            callback(response);
-        } catch {
-            callback({ error: 'Invalid response' });
-        }
-    });
-
+    console.log(`[WS][PUBLISH] ${destination}`, body);
     client.publish({
         destination,
-        headers: { replyTo },
         body: JSON.stringify(body),
     });
 };
@@ -153,21 +140,9 @@ export const fetchWinnerByRoomId = async (roomId) => {
     return normalizeRoundResult(winner);
 };
 
-export const joinRoom = (roomId, userId, username) => (
-    new Promise((resolve, reject) => {
-        sendWithCallback(`/app/room/${roomId}/join`, { userId, username }, (response) => {
-            if (response.error) {
-                reject(new Error(response.error));
-                return;
-            }
-
-            resolve({
-                ...response,
-                room: normalizeSessionUpdate(response.room),
-            });
-        });
-    })
-);
+export const joinRoom = async (roomId, userId, username) => {
+    publishRoomCommand(`/app/room/${roomId}/join`, { userId, username });
+};
 
 export const leaveRoom = async (roomId, userId) => {
     const result = await request(`/api/v1/rooms/${roomId}/leave`, {
@@ -184,38 +159,9 @@ export const leaveRoom = async (roomId, userId) => {
     };
 };
 
-export const activateBoost = (roomId, userId) => (
-    new Promise((resolve, reject) => {
-        sendWithCallback(`/app/room/${roomId}/boost`, { userId }, (response) => {
-            if (response.error) {
-                reject(new Error(response.error));
-                return;
-            }
-
-            resolve({
-                ...response,
-                room: normalizeSessionUpdate(response.session ?? response.room),
-            });
-        });
-    })
-);
-
-export const startGame = (roomId) => (
-    new Promise((resolve, reject) => {
-        sendWithCallback(`/app/room/${roomId}/start`, {}, (response) => {
-            if (response.error) {
-                reject(new Error(response.error));
-                return;
-            }
-
-            resolve({
-                ...response,
-                room: normalizeSessionUpdate(response.room),
-                winner: normalizeRoundResult(response.winner),
-            });
-        });
-    })
-);
+export const activateBoost = async (roomId, userId) => {
+    publishRoomCommand(`/app/room/${roomId}/boost`, { userId });
+};
 
 export const normalizeRoomsMessage = (rooms) => rooms.map(normalizeRoomSummary);
 export const normalizeSessionMessage = (session, summary = null) => (

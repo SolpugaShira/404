@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import {data, useNavigate, useParams} from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
     activateBoost,
     fetchRoomById,
     fetchWinnerByRoomId,
     joinRoom,
-    normalizeRoundMessage,
     normalizeSessionMessage,
 } from '../api/roomsApi';
 import { useUser } from '../context/useUser';
@@ -25,9 +24,13 @@ const GameRoomPage = () => {
     const [socketState, setSocketState] = useState({
         connected: false,
         sessionSubscribed: false,
-        roundSubscribed: false,
     });
     const roomSnapshotRef = useRef(null);
+    const winnerRef = useRef(null);
+
+    useEffect(() => {
+        winnerRef.current = winner;
+    }, [winner]);
 
     const mergeStableRoomState = (nextRoom, previousRoom = null) => {
         const stableRoom = roomSnapshotRef.current ?? previousRoom;
@@ -67,20 +70,6 @@ const GameRoomPage = () => {
         };
 
         return mergedRoom;
-    };
-
-    const refreshRoomState = async () => {
-        const data = await fetchRoomById(roomId);
-        setRoom((prev) => mergeStableRoomState(data, prev));
-
-        if (data?.status === 'COMPLETED') {
-            const latestWinner = data.result ?? await fetchWinnerByRoomId(roomId).catch(() => null);
-            setWinner(latestWinner);
-        } else {
-            setWinner(null);
-        }
-
-        return data;
     };
 
     useEffect(() => {
@@ -160,15 +149,39 @@ const GameRoomPage = () => {
     useEffect(() => {
         const subscribeToRoomTopics = (client) => {
             if (!client?.connected) {
+                console.log('[WS] disconnected: skip room subscriptions');
                 setSocketState({
                     connected: false,
                     sessionSubscribed: false,
-                    roundSubscribed: false,
                 });
                 return [];
             }
 
-            const sessionSub = client.subscribe(`/topic/session/${roomId}`, (message) => {
+            fetchRoomById(roomId)
+                .then((data) => {
+                    setRoom((prev) => mergeStableRoomState(data, prev));
+
+                    if (data?.status === 'COMPLETED') {
+                        if (data.result) {
+                            setWinner(data.result);
+                            return;
+                        }
+
+                        if (!winnerRef.current) {
+                            fetchWinnerByRoomId(roomId)
+                                .then((latestWinner) => {
+                                    setWinner(latestWinner);
+                                })
+                                .catch(console.error);
+                        }
+                    }
+                })
+                .catch(console.error);
+
+            const destination = `/topic/session/${roomId}`;
+            console.log(`[WS][SUBSCRIBE] ${destination}`);
+            const sessionSub = client.subscribe(destination, (message) => {
+                console.log(`[WS][MESSAGE] ${destination}`, message.body);
                 try {
                     const payload = JSON.parse(message.body);
                     setRoom((prev) => {
@@ -183,35 +196,31 @@ const GameRoomPage = () => {
                 }
             });
 
-            const roundSub = client.subscribe(`/topic/round/${roomId}`, (message) => {
-                try {
-                    setWinner(normalizeRoundMessage(JSON.parse(message.body)));
-                } catch (parseError) {
-                    console.error('Round parse error:', parseError);
-                }
-            });
-
             setSocketState({
                 connected: true,
                 sessionSubscribed: true,
-                roundSubscribed: true,
             });
 
-            return [sessionSub, roundSub];
+            return [sessionSub];
         };
 
         let subscriptions = subscribeToRoomTopics(getStompClient());
         const unsubscribeConnection = onStompConnectionChange((client) => {
-            subscriptions.forEach((subscription) => subscription.unsubscribe());
+            subscriptions.forEach((subscription) => {
+                console.log(`[WS][UNSUBSCRIBE] /topic/session/${roomId}`);
+                subscription.unsubscribe();
+            });
             subscriptions = subscribeToRoomTopics(client);
         });
 
         return () => {
-            subscriptions.forEach((subscription) => subscription.unsubscribe());
+            subscriptions.forEach((subscription) => {
+                console.log(`[WS][UNSUBSCRIBE] /topic/session/${roomId}`);
+                subscription.unsubscribe();
+            });
             setSocketState({
                 connected: false,
                 sessionSubscribed: false,
-                roundSubscribed: false,
             });
             unsubscribeConnection();
         };
@@ -221,10 +230,7 @@ const GameRoomPage = () => {
         setActionLoading(true);
         try {
             await joinRoom(roomId, user.id, user.username);
-            await Promise.all([
-                refreshRoomState(),
-                refreshUser(),
-            ]);
+            await refreshUser();
             setError(null);
         } catch (err) {
             setError(err.message);
@@ -237,10 +243,7 @@ const GameRoomPage = () => {
         setActionLoading(true);
         try {
             await activateBoost(roomId, user.id);
-            await Promise.all([
-                refreshRoomState(),
-                refreshUser(),
-            ]);
+            await refreshUser();
             setError(null);
         } catch (err) {
             setError(err.message);
@@ -293,7 +296,6 @@ const GameRoomPage = () => {
         { label: 'Множитель буста', value: room.boostWeightMultiplier ?? '—' },
         { label: 'WebSocket', value: socketState.connected ? 'Подключен' : 'Не подключен' },
         { label: 'Sub /session', value: socketState.sessionSubscribed ? 'Активна' : 'Нет' },
-        { label: 'Sub /round', value: socketState.roundSubscribed ? 'Активна' : 'Нет' },
         { label: 'Описание', value: room.description || '—' },
     ];
 

@@ -35,7 +35,10 @@ const RoomLobbyPage = () => {
 
         const subscribeToRoom = (client) => {
             if (!client?.connected) return undefined;
-            return client.subscribe(`/topic/session/${roomId}`, (message) => {
+            const destination = `/topic/session/${roomId}`;
+            console.log(`[WS][SUBSCRIBE] ${destination}`);
+            return client.subscribe(destination, (message) => {
+                console.log(`[WS][MESSAGE] ${destination}`, message.body);
                 try {
                     const payload = JSON.parse(message.body);
                     setRoom((prev) => normalizeSessionMessage(payload, prev));
@@ -47,12 +50,18 @@ const RoomLobbyPage = () => {
 
         let subscription = subscribeToRoom(getStompClient());
         const unsubscribeConnection = onStompConnectionChange((client) => {
+            if (subscription) {
+                console.log(`[WS][UNSUBSCRIBE] /topic/session/${roomId}`);
+            }
             subscription?.unsubscribe();
             subscription = subscribeToRoom(client);
         });
 
         return () => {
             cancelled = true;
+            if (subscription) {
+                console.log(`[WS][UNSUBSCRIBE] /topic/session/${roomId}`);
+            }
             subscription?.unsubscribe();
             unsubscribeConnection();
         };
@@ -64,13 +73,14 @@ const RoomLobbyPage = () => {
             return;
         }
         setActionLoading(true);
-        navigate(`/game/${roomId}`);
         try {
             await joinRoom(roomId, user.id, user.username);
             await refreshUser();
-            navigate(`/game/:${roomId}`);
+            setError(null);
+            navigate(`/game/${roomId}`);
         } catch (err) {
             setError(err.message);
+        } finally {
             setActionLoading(false);
         }
     };

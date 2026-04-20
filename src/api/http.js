@@ -33,12 +33,17 @@ const parseResponse = async (response) => {
 };
 
 export const request = async (path, options = {}) => {
-    const response = await fetch(buildUrl(path), {
+    const method = (options.method ?? 'GET').toUpperCase();
+    const url = buildUrl(path);
+    console.log(`[API][REQUEST] ${method} ${url}`);
+
+    const response = await fetch(url, {
         redirect: 'follow',
         ...options,
     });
 
     const payload = await parseResponse(response);
+    console.log(`[API][RESPONSE] ${method} ${url} -> ${response.status}`);
 
     if (!response.ok) {
         const message = typeof payload === 'string' && payload

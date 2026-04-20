@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import AuthPage from '../components/AuthPage';
 import { fetchUserProfile, login, register } from '../api/userApi';
-import { connectStomp, disconnectStomp } from '../stompClient';
+import { disconnectStomp } from '../stompClient';
 import UserContext from './userContext';
 
 const mapUserPayload = (payload) => ({
@@ -29,7 +29,6 @@ export const UserProvider = ({ children }) => {
 
     const [user, setUser] = useState(loadUser);
     const [ready, setReady] = useState(false);
-    const stompSubscriptions = useRef([]);
 
     useEffect(() => {
         if (user?.id || user?.username) {
@@ -73,38 +72,6 @@ export const UserProvider = ({ children }) => {
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    useEffect(() => {
-        if (!ready || !user?.id) {
-            return undefined;
-        }
-
-        const onConnected = (client) => {
-            stompSubscriptions.current.forEach((subscription) => subscription.unsubscribe());
-            stompSubscriptions.current = [];
-
-            const balanceSub = client.subscribe('/user/queue/balance', (message) => {
-                try {
-                    const newBalance = JSON.parse(message.body);
-                    setUser((prev) => ({ ...prev, balance: newBalance }));
-                } catch (error) {
-                    console.error('Balance parse error:', error);
-                }
-            });
-
-            stompSubscriptions.current.push(balanceSub);
-        };
-
-        connectStomp(user.id, user.username, onConnected, (error) => {
-            console.error('STOMP connection failed:', error);
-        });
-
-        return () => {
-            stompSubscriptions.current.forEach((subscription) => subscription.unsubscribe());
-            stompSubscriptions.current = [];
-            disconnectStomp();
-        };
-    }, [ready, user?.id, user?.username]);
-
     const updateBalance = (amount) => {
         setUser((prev) => ({ ...prev, balance: prev.balance + amount }));
     };
@@ -125,8 +92,6 @@ export const UserProvider = ({ children }) => {
 
     const logoutUser = async () => {
         await disconnectStomp();
-        stompSubscriptions.current.forEach((subscription) => subscription.unsubscribe());
-        stompSubscriptions.current = [];
         setUser(null);
         setReady(true);
     };

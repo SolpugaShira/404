@@ -35,7 +35,10 @@ const HomePage = () => {
 
         const subscribeToRooms = (client) => {
             if (!client?.connected) return undefined;
-            return client.subscribe('/topic/rooms', (message) => {
+            const destination = '/topic/rooms';
+            console.log(`[WS][SUBSCRIBE] ${destination}`);
+            return client.subscribe(destination, (message) => {
+                console.log(`[WS][MESSAGE] ${destination}`, message.body);
                 try {
                     setRooms(normalizeRoomsMessage(JSON.parse(message.body)));
                 } catch (error) {
@@ -46,12 +49,18 @@ const HomePage = () => {
 
         let subscription = subscribeToRooms(getStompClient());
         const unsubscribeConnection = onStompConnectionChange((client) => {
+            if (subscription) {
+                console.log('[WS][UNSUBSCRIBE] /topic/rooms');
+            }
             subscription?.unsubscribe();
             subscription = subscribeToRooms(client);
         });
 
         return () => {
             cancelled = true;
+            if (subscription) {
+                console.log('[WS][UNSUBSCRIBE] /topic/rooms');
+            }
             subscription?.unsubscribe();
             unsubscribeConnection();
         };
