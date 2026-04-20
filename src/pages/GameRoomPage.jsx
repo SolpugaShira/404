@@ -208,7 +208,7 @@ const GameRoomPage = () => {
         const unsubscribeConnection = onStompConnectionChange((client) => {
             subscriptions.forEach((subscription) => {
                 console.log(`[WS][UNSUBSCRIBE] /topic/session/${roomId}`);
-                subscription.unsubscribe();
+                try { if (typeof subscription.unsubscribe === 'function') { subscription.unsubscribe(); } } catch { /* ignore unsubscribe errors */ }
             });
             subscriptions = subscribeToRoomTopics(client);
         });
@@ -216,7 +216,7 @@ const GameRoomPage = () => {
         return () => {
             subscriptions.forEach((subscription) => {
                 console.log(`[WS][UNSUBSCRIBE] /topic/session/${roomId}`);
-                subscription.unsubscribe();
+                try { if (typeof subscription.unsubscribe === 'function') { subscription.unsubscribe(); } } catch { /* ignore unsubscribe errors */ }
             });
             setSocketState({
                 connected: false,
@@ -424,3 +424,4 @@ const GameRoomPage = () => {
 };
 
 export default GameRoomPage;
+

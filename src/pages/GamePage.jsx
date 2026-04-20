@@ -158,21 +158,12 @@ const GamePage = () => {
         const safeUnsubscribe = (subscription) => {
             if (!subscription) return;
             try {
-                const client = getStompClient();
-                // Если клиент отсутствует или не подключен — отписка не нужна
-                if (!client || !client.connected) {
-                    return;
-                }
                 if (typeof subscription.unsubscribe === 'function') {
                     console.log('[WS][UNSUBSCRIBE] GamePage subscription');
                     subscription.unsubscribe();
                 }
-            } catch (e) {
-                // Подавляем только ошибки, связанные с закрытым сокетом
-                const errorMsg = e?.message || '';
-                if (!errorMsg.includes('CLOSING') && !errorMsg.includes('CLOSED')) {
-                    console.warn('[GamePage] Unsubscribe error:', e);
-                }
+            } catch {
+                // Ignore unsubscribe errors on reconnect/closed socket.
             }
         };
 
@@ -390,3 +381,5 @@ const GamePage = () => {
 };
 
 export default GamePage;
+
+

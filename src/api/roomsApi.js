@@ -8,7 +8,7 @@ const normalizeParticipant = (participant) => ({
     isBot: participant.isBot ?? participant.bot ?? false,
 });
 
-const normalizeRoomSummary = (room) => ({
+export const normalizeRoomSummary = (room) => ({
     ...room,
     id: room.id ?? room.roomId,
     roomId: room.roomId ?? room.id,

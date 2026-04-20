@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import AuthPage from '../components/AuthPage';
 import { fetchUserProfile, login, register } from '../api/userApi';
-import { disconnectStomp } from '../stompClient';
+import { connectStomp, disconnectStomp } from '../stompClient';
 import UserContext from './userContext';
 
 const mapUserPayload = (payload) => ({
@@ -71,6 +71,16 @@ export const UserProvider = ({ children }) => {
             cancelled = true;
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        if (!ready) return;
+
+        if (user?.id) {
+            connectStomp(user.id, user.username);
+        } else {
+            disconnectStomp();
+        }
+    }, [ready, user?.id, user?.username]);
 
     const updateBalance = (amount) => {
         setUser((prev) => ({ ...prev, balance: prev.balance + amount }));

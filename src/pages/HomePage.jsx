@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import RoomCard from '../components/RoomCard';
 import SearchBar from '../components/SearchBar';
 import HorizontalScrollSection from '../components/HorizontalScrollSection';
-import { fetchRooms, normalizeRoomsMessage } from '../api/roomsApi';
+import { fetchRooms, normalizeRoomSummary, normalizeRoomsMessage } from '../api/roomsApi';
 import { getStompClient, onStompConnectionChange } from '../stompClient';
 
 const HomePage = () => {
@@ -40,7 +40,17 @@ const HomePage = () => {
             return client.subscribe(destination, (message) => {
                 console.log(`[WS][MESSAGE] ${destination}`, message.body);
                 try {
-                    setRooms(normalizeRoomsMessage(JSON.parse(message.body)));
+                    const payload = JSON.parse(message.body);
+                    const updatedRoom = normalizeRoomSummary(payload);
+                    setRooms((prevRooms) => {
+                        const roomExists = prevRooms.some((room) => room.id === updatedRoom.id);
+                        if (roomExists) {
+                            return prevRooms.map((room) => (
+                                room.id === updatedRoom.id ? updatedRoom : room
+                            ));
+                        }
+                        return [...prevRooms, updatedRoom];
+                    });
                 } catch (error) {
                     console.error('Rooms parse error:', error);
                 }
