@@ -64,10 +64,11 @@ const RoomLobbyPage = () => {
             return;
         }
         setActionLoading(true);
+        navigate(`/game/${roomId}`);
         try {
             await joinRoom(roomId, user.id, user.username);
             await refreshUser();
-            navigate(`/room/${roomId}`);
+            navigate(`/game/:${roomId}`);
         } catch (err) {
             setError(err.message);
             setActionLoading(false);
@@ -91,6 +92,8 @@ const RoomLobbyPage = () => {
     const userIsParticipant = participants.some(p => p.userId === user?.id);
     const canPlay = isWaiting && !userIsParticipant && user?.balance >= entryFee;
     console.log(theme, `${theme}T`)
+    console.log(room)
+
     return (
         <div className="lobby-page">
             <div className="lobby-header">
@@ -131,8 +134,8 @@ const RoomLobbyPage = () => {
                             <span>{commission}%</span>
                         </div>
                     </div>
-                    <button className="play-button" onClick={handlePlay} disabled={actionLoading || !canPlay}>
-                        {actionLoading ? 'Подключение...' : userIsParticipant ? 'Вы уже в игре' : 'Играть'}
+                    <button className="play-button" onClick={handlePlay}  disabled={actionLoading}>
+                        {actionLoading ? 'Подключение...' : userIsParticipant ? 'Вернуться в игру' : 'Играть'}
                     </button>
                 </div>
             </div>

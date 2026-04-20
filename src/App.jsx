@@ -6,6 +6,7 @@ import GameRoomPage from './pages/GameRoomPage';
 import AccountPage from './pages/AccountPage';
 import NotFoundPage from './pages/NotFoundPage';
 import RoomLobbyPage from "./pages/RoomLobbyPage.jsx";
+import GamePage from "./pages/GamePage.jsx";
 
 function App() {
     return (
@@ -14,7 +15,9 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Layout />}>
                         <Route index element={<HomePage />} />
+                        <Route path="room/:roomId" element={<GameRoomPage />} />
                         <Route path="room/:roomId/lobby" element={<RoomLobbyPage />} />
+                        <Route path="/game/:roomId" element={<GamePage />} />
                         <Route path="account" element={<AccountPage />} />
                         <Route path="*" element={<NotFoundPage />} />
                     </Route>

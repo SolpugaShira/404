@@ -1061,3 +1061,449 @@ nav a {
   height: 100%;
   z-index: 10;
 }
+
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  background: #ffffff;
+}
+
+.back-button,
+.profile-button,
+.leave-room-button,
+.back-to-lobby-btn {
+  background: #ffffff;
+  color: #000000;
+  padding: 12px 28px;
+  font-size: 40px;
+  font-weight: bold;
+}
+
+.back-button:hover,
+.profile-button:hover,
+.leave-room-button:hover,
+.back-to-lobby-btn:hover {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+
+
+.prize-pool {
+  font-size: 28px;
+  font-weight: 900;
+  color: #000000;
+  background: #ffffff;
+  padding: 8px 24px;
+}
+
+.prize-pool strong {
+  color: #000000;
+  padding: 4px 16px;
+  margin-left: 12px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.game-main-row {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  flex: 1;
+}
+
+
+
+.players-panel h3 {
+  margin: 0 0 24px 0;
+  font-size: 32px;
+  font-weight: 900;
+  color: #000000;
+  border-bottom: 3px solid #000000;
+  padding-bottom: 16px;
+}
+
+.players-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #ffffff;
+  font-size: 20px;
+  font-weight: 500;
+  color: #000000;
+}
+
+.player-item.human {
+  border-left-width: 10px;
+}
+
+/* === GamePage Styles === */
+
+.game-page {
+  /*aspect-ratio: 11 / 10;*/
+  min-height: 100vh;
+  background: #ffffff;
+  color: #000000;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  background: #ffffff;
+}
+
+.back-button,
+.profile-button,
+.leave-room-button,
+.back-to-lobby-btn {
+  background: #ffffff;
+  color: #000000;
+  padding: 12px 28px;
+  font-size: 22px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+.back-button:hover,
+.profile-button:hover,
+.leave-room-button:hover,
+.back-to-lobby-btn:hover {
+  opacity: 0.7;
+  transform: none;
+}
+
+.prize-pool {
+  font-size: 28px;
+  font-weight: 900;
+  color: #000000;
+  background: #ffffff;
+  padding: 8px 24px;
+}
+
+.prize-pool strong {
+  color: #000000;
+  padding: 4px 16px;
+  margin-left: 12px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.game-main-row {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  flex: 1;
+}
+
+.players-panel h3 {
+  margin: 0 0 24px 0;
+  font-size: 32px;
+  font-weight: 900;
+  color: #000000;
+  border-bottom: 3px solid #000000;
+  padding-bottom: 16px;
+}
+
+.players-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #ffffff;
+  font-size: 20px;
+  font-weight: 500;
+  color: #000000;
+}
+
+.player-item.human {
+  border-left: 10px solid #000000;
+}
+
+.player-item.bot {
+  border-left: 10px solid #888888;
+}
+
+.player-icon {
+  font-size: 28px;
+}
+
+.player-name {
+  flex: 1;
+}
+
+.boost-indicator {
+  font-size: 24px;
+  margin-left: auto;
+}
+
+.winner-crown {
+  font-size: 28px;
+  margin-left: 8px;
+}
+
+.game-area {
+  background: #ffffff;
+  border: 3px solid #000000;
+  border-radius: 70px;
+  padding: 24px;
+  min-height: 400px;
+  color: #000000;
+
+  /* Grid для расположения элементов */
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+}
+
+.waiting-state,
+.finished-state {
+  display: contents; /* дочерние элементы становятся непосредственными участниками грида */
+}
+
+/* Таймер в правом верхнем углу */
+.timer {
+  grid-row: 1;
+  grid-column: 2;
+  justify-self: end;
+  align-self: start;
+  font-size: 24px;
+  color: #000000;
+  margin: 0;
+}
+
+/* Шанс на победу — в нижней строке слева */
+.win-chance {
+  grid-row: 3;
+  grid-column: 1;
+  justify-self: start;
+  align-self: end;
+  font-size: 26px;
+  padding: 20px;
+  color: #000000;
+  margin: 0;
+}
+
+/* Кнопка буста — в нижней строке справа */
+.boost-button {
+  grid-row: 3;
+  grid-column: 2;
+  justify-self: end;
+  align-self: end;
+  background: #ffffff;
+  color: #000000;
+  border: 3px solid #000000;
+  border-radius: 60px;
+  padding: 16px 36px;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0;
+}
+
+.boost-button:hover:not(:disabled) {
+  opacity: 0.8;
+  transform: none;
+}
+
+.boost-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Для не-участников или наблюдателей */
+.hint {
+  grid-row: 2;
+  grid-column: 1 / span 2;
+  justify-self: center;
+  align-self: center;
+  color: #000000;
+  font-size: 20px;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Завершённое состояние */
+.finished-state {
+  display: contents;
+}
+
+.finished-state h3 {
+  grid-row: 1;
+  grid-column: 1 / span 2;
+  justify-self: center;
+  font-size: 40px;
+  color: #000000;
+  margin-bottom: 32px;
+  font-weight: 900;
+}
+
+.winner-announcement {
+  grid-row: 2;
+  grid-column: 1 / span 2;
+  justify-self: center;
+  align-self: center;
+  font-size: 36px;
+  padding: 24px;
+  color: #000000;
+  margin: 32px 0;
+}
+
+.game-visual-placeholder {
+  grid-row: 3;
+  grid-column: 1 / span 2;
+  margin-top: 40px;
+  padding: 48px;
+  font-size: 28px;
+  color: #000000;
+  width: 100%;
+}
+
+.back-to-lobby-btn {
+  grid-row: 4;
+  grid-column: 1 / span 2;
+  justify-self: center;
+  margin-top: 20px;
+  padding: 12px 28px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #000000;
+  border: 3px solid #000000;
+  border-radius: 60px;
+  cursor: pointer;
+}
+
+/* Состояния загрузки и ошибки */
+.loading,
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: #000000;
+  font-size: 32px;
+  font-weight: bold;
+  gap: 24px;
+}
+
+.error button {
+  color: #000000;
+  padding: 16px 32px;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 3px solid #000000;
+  border-radius: 60px;
+}
+
+.error button:hover {
+  background: #000000;
+  color: #ffffff;
+}
+
+/* Адаптивность */
+@media (max-width: 900px) {
+  .game-page {
+    padding: 20px;
+  }
+
+  .game-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    padding: 20px;
+  }
+
+  .header-actions {
+    justify-content: space-between;
+  }
+
+  .game-main-row {
+    grid-template-columns: 1fr;
+  }
+
+  .players-panel {
+    order: 2;
+  }
+
+  .game-area {
+    order: 1;
+    min-height: 350px;
+    padding: 24px;
+  }
+
+  .prize-pool {
+    text-align: center;
+  }
+
+  .win-chance {
+    font-size: 22px;
+  }
+}
+
+.GOLFG-0{
+  background-image: url("./assets/Group 39.svg");
+}
+.GOLFG-1{
+  background-image: url("./assets/Group 40.svg");
+}
+.GOLFG-2{
+  background-image: url("./assets/Group 41.svg");
+}
+.GOLFG-3{
+  background-image: url("./assets/Group 42.svg");
+}
+.GOLFG-4{
+  background-image: url("./assets/Group 43.svg");
+}
+.GOLFG-5{
+  background-image: url("./assets/Group 44.svg");
+}
+
+.GOLFG-0, .GOLFG-1, .GOLFG-2,.GOLFG-3, .GOLFG-4, .GOLFG-5{
+object-fit: cover;
+background-repeat: no-repeat;          /* отключаем дублирование */
+background-size: cover;                /* растягиваем на всю площадь с сохранением пропорций */
+background-position: center calc(50% + 40px);           /* центрируем изображение */
+width: 100%;
+height: 100%;
+z-index: 10;
+}
