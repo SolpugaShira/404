@@ -123,8 +123,16 @@ export const fetchRooms = async () => {
 };
 
 export const fetchRoomSummaryById = async (roomId) => {
-    const rooms = await fetchRooms();
-    return rooms.find((room) => room.id === roomId || room.roomId === roomId) ?? null;
+    try {
+        const room = await request(`/api/v1/rooms/${roomId}`, {
+            method: 'GET',
+        });
+
+        return room ? normalizeRoomSummary(room) : null;
+    } catch (error) {
+        console.error(`Failed to fetch room ${roomId}:`, error);
+        return null;
+    }
 };
 
 export const fetchRoomById = async (roomId) => {
@@ -132,7 +140,7 @@ export const fetchRoomById = async (roomId) => {
         fetchRoomSummaryById(roomId),
         request(`/api/v1/rooms/${roomId}/session`, {
             method: 'GET',
-        }),
+        }).catch(() => null),
     ]);
 
     return mergeRoomState(summary, normalizeSessionUpdate(session));
