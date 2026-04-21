@@ -1156,8 +1156,8 @@ nav a {
 /* === GamePage Styles === */
 
 .game-page {
-  /*aspect-ratio: 11 / 10;*/
-  min-height: 100vh;
+  aspect-ratio: 11 / 9;
+  /*min-height: 110vh;*/
   background: #ffffff;
   color: #000000;
   padding: 32px;
@@ -1278,7 +1278,6 @@ nav a {
 
 .game-area {
   background: #ffffff;
-  border: 3px solid #000000;
   border-radius: 70px;
   padding: 24px;
   min-height: 400px;
@@ -1317,6 +1316,8 @@ nav a {
   padding: 20px;
   color: #000000;
   margin: 0;
+  position: relative;
+  top: -400%;
 }
 
 /* Кнопка буста — в нижней строке справа */
@@ -1327,7 +1328,6 @@ nav a {
   align-self: end;
   background: #ffffff;
   color: #000000;
-  border: 3px solid #000000;
   border-radius: 60px;
   padding: 16px 36px;
   font-size: 24px;
@@ -1335,6 +1335,8 @@ nav a {
   cursor: pointer;
   transition: all 0.2s ease;
   margin: 0;
+  position: relative;
+  top: -400%;
 }
 
 .boost-button:hover:not(:disabled) {
@@ -1353,6 +1355,8 @@ nav a {
   grid-column: 1 / span 2;
   justify-self: center;
   align-self: center;
+  position: relative;
+  top: -25%;
   color: #000000;
   font-size: 20px;
   font-style: italic;
@@ -1404,9 +1408,11 @@ nav a {
   font-size: 22px;
   font-weight: bold;
   color: #000000;
-  border: 3px solid #000000;
   border-radius: 60px;
   cursor: pointer;
+  position: relative;
+  top: -400%;
+  z-index: 26 ;
 }
 
 /* Состояния загрузки и ошибки */
@@ -1498,14 +1504,14 @@ nav a {
   background-image: url("./assets/Group 44.svg");
 }
 
-.GOLFG-0, .GOLFG-1, .GOLFG-2,.GOLFG-3, .GOLFG-4, .GOLFG-5{
-object-fit: cover;
-background-repeat: no-repeat;          /* отключаем дублирование */
-background-size: cover;                /* растягиваем на всю площадь с сохранением пропорций */
-background-position: start;           /* центрируем изображение */
-width: 100%;
-height: 100%;
-z-index: 10;
+.GOLFG-0, .GOLFG-1, .GOLFG-2, .GOLFG-3, .GOLFG-4, .GOLFG-5 {
+  background-color: #86ab5d;
+  background-repeat: no-repeat;
+  background-size: 100% auto;      /* ширина 100% от элемента, высота автоматически (как получится) */
+  background-position: left top;   /* стартовая позиция (можно также "top left" или "start" – но left top надёжнее) */
+  width: 100%;
+  height: 100%;                    /* если нужна именно такая высота элемента – оставляем, иначе замени на auto */
+  z-index: 10;
 }
 
 .GOLFG-0{
@@ -1525,4 +1531,91 @@ z-index: 10;
 }
 .GOLFG-5{
   background-image: url("./assets/Group 44.svg");
+}
+
+
+.countdown-number {
+  font-size: 120px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 20px rgba(0,0,0,0.5);
+  animation: pulse 1s infinite;
+  position: relative;
+  top: -25%;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animation-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+}
+
+.animation-container svg {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Чтобы .game-area был контекстом позиционирования */
+.game-area {
+  position: relative;
+  overflow: hidden;
+}
+.game-area {
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  border-radius: inherit;
+}
+
+.countdown-number {
+  font-size: 120px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 20px rgba(0,0,0,0.5);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animation-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 21;
+}
+
+.animation-container svg {
+  max-width: 100%;
+  max-height: 100%;
 }
