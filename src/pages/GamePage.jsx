@@ -5,7 +5,6 @@ import {
     fetchRoomById,
     fetchWinnerByRoomId,
     activateBoost,
-    leaveRoom,
     normalizeSessionMessage,
     normalizeRoundMessage,
 } from '../api/roomsApi';
@@ -30,7 +29,6 @@ const GamePage = () => {
     const [actionLoading, setActionLoading] = useState(false);
     const [winner, setWinner] = useState(null);
     const [displaySecondsLeft, setDisplaySecondsLeft] = useState(0);
-    const [leavingRoom, setLeavingRoom] = useState(false);
 
     const roomSnapshotRef = useRef(null);
     const subscriptionsRef = useRef([]);
@@ -297,6 +295,7 @@ const GamePage = () => {
     })();
     const theme = `${room.theme.slice(0,-2)}G` ?? "GOLFG";
     // console.log(theme)
+    console.log(displaySecondsLeft)
     return (
         <div className="game-page">
             {/* Header */}
@@ -332,7 +331,7 @@ const GamePage = () => {
                 </aside>
 
                 {/* Правая панель — игра */}
-                <main className={`game-area ${theme}-${participants.length < 5 ? participants.length : 5}`}>
+                    <main className={`game-area ${theme}-${participants.length < 5 ? participants.length : 5}`}>
                     {isWaiting && (
                         <div className="waiting-state">
                             <p className="timer">До автозапуска: {displaySecondsLeft} сек.</p>

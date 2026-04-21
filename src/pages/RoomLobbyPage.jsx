@@ -100,7 +100,6 @@ const RoomLobbyPage = () => {
     const theme = room.theme.slice(0,-2) ?? "GOLF";
     const isWaiting = room.status === 'WAITING' || room.status === 'FILLING';
     const userIsParticipant = participants.some(p => p.userId === user?.id);
-    const canPlay = isWaiting && !userIsParticipant && user?.balance >= entryFee;
     console.log(theme, `${theme}T`)
     console.log(room)
 

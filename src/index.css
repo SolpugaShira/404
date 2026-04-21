@@ -1502,8 +1502,27 @@ nav a {
 object-fit: cover;
 background-repeat: no-repeat;          /* отключаем дублирование */
 background-size: cover;                /* растягиваем на всю площадь с сохранением пропорций */
-background-position: center calc(50% + 40px);           /* центрируем изображение */
+background-position: start;           /* центрируем изображение */
 width: 100%;
 height: 100%;
 z-index: 10;
+}
+
+.GOLFG-0{
+  background-image: url("./assets/Group 39.svg");
+}
+.GOLFG-1{
+  background-image: url("./assets/Group 40.svg");
+}
+.GOLFG-2{
+  background-image: url("./assets/Group 41.svg");
+}
+.GOLFG-3{
+  background-image: url("./assets/Group 42.svg");
+}
+.GOLFG-4{
+  background-image: url("./assets/Group 43.svg");
+}
+.GOLFG-5{
+  background-image: url("./assets/Group 44.svg");
 }
