@@ -5,6 +5,7 @@ import {
     fetchRoomById,
     fetchWinnerByRoomId,
     joinRoom,
+    normalizeRoundMessage,
     normalizeSessionMessage,
 } from '../api/roomsApi';
 import { useUser } from '../context/useUser';
@@ -184,13 +185,12 @@ const GameRoomPage = () => {
                 console.log(`[WS][MESSAGE] ${destination}`, message.body);
                 try {
                     const payload = JSON.parse(message.body);
-                    setRoom((prev) => {
-                        const nextRoom = normalizeSessionMessage(payload, prev);
-                        if (nextRoom?.status === 'COMPLETED' && nextRoom.result) {
-                            setWinner(nextRoom.result);
-                        }
-                        return mergeStableRoomState(nextRoom, prev);
-                    });
+
+                    if (payload.status === 'COMPLETED' && payload.result) {
+                        setWinner(normalizeRoundMessage(payload.result));
+                    }
+
+                    setRoom((prev) => mergeStableRoomState(normalizeSessionMessage(payload, prev), prev));
                 } catch (parseError) {
                     console.error('Session parse error:', parseError);
                 }
@@ -208,7 +208,7 @@ const GameRoomPage = () => {
         const unsubscribeConnection = onStompConnectionChange((client) => {
             subscriptions.forEach((subscription) => {
                 console.log(`[WS][UNSUBSCRIBE] /topic/session/${roomId}`);
-                try { if (typeof subscription.unsubscribe === 'function') { subscription.unsubscribe(); } } catch { /* ignore unsubscribe errors */ }
+                try { if (typeof subscription.unsubscribe === 'function') { subscription.unsubscribe(); } } catch {}
             });
             subscriptions = subscribeToRoomTopics(client);
         });
@@ -216,7 +216,7 @@ const GameRoomPage = () => {
         return () => {
             subscriptions.forEach((subscription) => {
                 console.log(`[WS][UNSUBSCRIBE] /topic/session/${roomId}`);
-                try { if (typeof subscription.unsubscribe === 'function') { subscription.unsubscribe(); } } catch { /* ignore unsubscribe errors */ }
+                try { if (typeof subscription.unsubscribe === 'function') { subscription.unsubscribe(); } } catch {}
             });
             setSocketState({
                 connected: false,

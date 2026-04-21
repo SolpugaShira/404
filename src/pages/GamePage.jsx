@@ -162,9 +162,7 @@ const GamePage = () => {
                     console.log('[WS][UNSUBSCRIBE] GamePage subscription');
                     subscription.unsubscribe();
                 }
-            } catch {
-                // Ignore unsubscribe errors on reconnect/closed socket.
-            }
+            } catch {}
         };
 
         const unsubscribeAll = () => {
@@ -174,53 +172,58 @@ const GamePage = () => {
 
         const subscribeToTopics = (client) => {
             if (!client?.connected) {
-                console.warn('[WS] disconnected: skip GamePage subscriptions');
+                console.warn('[GamePage] STOMP client not connected, skipping subscriptions');
                 return;
             }
 
             unsubscribeAll();
 
+            fetchRoomById(roomId)
+                .then((data) => {
+                    if (!mountedRef.current) return;
+                    setRoom((prev) => mergeStableRoomState(data, prev));
+
+                    if (!initialLoadDoneRef.current) {
+                        setLoading(false);
+                        initialLoadDoneRef.current = true;
+                    }
+
+                    if (data?.status === 'COMPLETED') {
+                        if (data.result) {
+                            setWinner(data.result);
+                            return;
+                        }
+                        fetchWinnerByRoomId(roomId)
+                            .then((latestWinner) => {
+                                if (mountedRef.current) setWinner(latestWinner);
+                            })
+                            .catch(console.error);
+                    }
+                })
+                .catch(console.error);
+
             try {
-                const sessionDestination = `/topic/session/${roomId}`;
-                console.log(`[WS][SUBSCRIBE] ${sessionDestination}`);
-                const sessionSub = client.subscribe(sessionDestination, (message) => {
+                const sessionSub = client.subscribe(`/topic/session/${roomId}`, (message) => {
                     try {
-                        console.log(`[WS][MESSAGE] ${sessionDestination}`, message.body);
                         const payload = JSON.parse(message.body);
                         if (!mountedRef.current) return;
 
-                        // Данные пришли — загрузка завершена
                         if (!initialLoadDoneRef.current) {
                             setLoading(false);
                             initialLoadDoneRef.current = true;
                         }
 
-                        setRoom((prev) => {
-                            const nextRoom = normalizeSessionMessage(payload, prev);
-                            if (nextRoom?.status === 'COMPLETED' && nextRoom.result) {
-                                setWinner(nextRoom.result);
-                            }
-                            return mergeStableRoomState(nextRoom, prev);
-                        });
+                        if (payload.status === 'COMPLETED' && payload.result) {
+                            setWinner(normalizeRoundMessage(payload.result));
+                        }
+
+                        setRoom((prev) => mergeStableRoomState(normalizeSessionMessage(payload, prev), prev));
                     } catch (e) {
                         console.error('[GamePage] Session message parse error:', e);
                     }
                 });
 
-                const roundDestination = `/topic/round/${roomId}`;
-                console.log(`[WS][SUBSCRIBE] ${roundDestination}`);
-                const roundSub = client.subscribe(roundDestination, (message) => {
-                    try {
-                        console.log(`[WS][MESSAGE] ${roundDestination}`, message.body);
-                        if (mountedRef.current) {
-                            setWinner(normalizeRoundMessage(JSON.parse(message.body)));
-                        }
-                    } catch (e) {
-                        console.error('[GamePage] Round message parse error:', e);
-                    }
-                });
-
-                subscriptionsRef.current = [sessionSub, roundSub];
+                subscriptionsRef.current = [sessionSub];
             } catch (e) {
                 console.error('[GamePage] Subscription error:', e);
             }
@@ -381,5 +384,6 @@ const GamePage = () => {
 };
 
 export default GamePage;
+
 
 
