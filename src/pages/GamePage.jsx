@@ -1,6 +1,6 @@
 // GamePage.jsx
-import Golfg1 from "../assets/Animations/golfg1.jsx";
-import { useEffect, useState, useRef, useCallback } from 'react';
+import {GOLF1, GOLF2, GOLF3, GOLF4, GOLF5} from "../assets/Animations/golfg1.jsx";
+import React, {useEffect, useState, useRef, useCallback, useMemo} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     fetchRoomById,
@@ -11,6 +11,7 @@ import {
 } from '../api/roomsApi';
 import { useUser } from '../context/useUser';
 import { getStompClient, onStompConnectionChange } from '../stompClient';
+
 
 const GamePage = () => {
     const { roomId } = useParams();
@@ -35,6 +36,7 @@ const GamePage = () => {
     const unsubscribeConnectionRef = useRef(null);
     const mountedRef = useRef(true);
     const initialLoadDoneRef = useRef(false);
+
 
     // Логирование монтирования компонента
     console.log('[GamePage] Render. showCountdown:', showCountdown, 'showAnimation:', showAnimation, 'displaySecondsLeft:', displaySecondsLeft);
@@ -289,6 +291,15 @@ const GamePage = () => {
         }
     };
 
+    const theme = room?.theme ? `${room.theme.slice(0, -2)}G` : "GOLFG";
+    const animationComponents = theme === 'GOLFG' ? [GOLF1, GOLF2, GOLF3, GOLF4, GOLF5] : [];
+    const currentAnimationComponent = useMemo(() => {
+        if (animationComponents.length === 0) return null;
+        const randomIndex = Math.floor(Math.random() * animationComponents.length);
+        return animationComponents[randomIndex];
+    }, [animationComponents]);
+
+
     // ===== Условные возвраты =====
     if (!isAuthenticated) return <div className="loading">Проверка авторизации...</div>;
     if (loading) return <div className="loading">Загрузка игры...</div>;
@@ -334,8 +345,6 @@ const GamePage = () => {
         return totalRoomWeight > 0 ? Math.round((myTotalWeight / totalRoomWeight) * 100) : 0;
     })();
 
-    const theme = room.theme ? `${room.theme.slice(0, -2)}G` : "GOLFG";
-    console.log('[GamePage] Render game area. Theme:', theme, 'Participants:', participants.length, 'isWaiting:', isWaiting, 'isFinished:', isFinished);
 
     return (
         <div className="game-page">
@@ -374,7 +383,7 @@ const GamePage = () => {
 
                     {showAnimation && (
                         <div className="animation-container" style={{ position: 'relative', zIndex: 10 }}>
-                            <Golfg1 />
+                            {showAnimation && currentAnimationComponent && React.createElement(currentAnimationComponent)}
                         </div>
                     )}
 
@@ -396,7 +405,7 @@ const GamePage = () => {
                                         <button
                                             className="boost-button"
                                             onClick={() => handleActivateBoost(1)}
-                                            disabled={actionLoading || !canActivateBoost}
+                                            disabled={actionLoading || !canActivateBoost|| winPercent>=50}
                                         >
                                             {availableBoostsToBuy === 0
                                                 ? 'Бусты активированы'
