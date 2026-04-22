@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import RoomCard from '../components/RoomCard';
 import SearchBar from '../components/SearchBar';
 import HorizontalScrollSection from '../components/HorizontalScrollSection';
-import { fetchRooms, normalizeRoomSummary, normalizeRoomsMessage } from '../api/roomsApi';
+import { fetchRooms, normalizeRoomSummary } from '../api/roomsApi';
 import { getStompClient, onStompConnectionChange } from '../stompClient';
 
 const HomePage = () => {
@@ -10,7 +10,6 @@ const HomePage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
 
-    // Загрузка комнат и подписка WebSocket (как было)
     useEffect(() => {
         let cancelled = false;
 
@@ -57,12 +56,22 @@ const HomePage = () => {
             });
         };
 
+        const safeUnsubscribe = (sub) => {
+            try {
+                if (typeof sub?.unsubscribe === 'function') {
+                    sub.unsubscribe();
+                }
+            } catch {
+                // Игнорируем ошибки уже закрытого сокета
+            }
+        };
+
         let subscription = subscribeToRooms(getStompClient());
         const unsubscribeConnection = onStompConnectionChange((client) => {
             if (subscription) {
                 console.log('[WS][UNSUBSCRIBE] /topic/rooms');
             }
-            subscription?.unsubscribe();
+            safeUnsubscribe(subscription);
             subscription = subscribeToRooms(client);
         });
 
@@ -71,7 +80,7 @@ const HomePage = () => {
             if (subscription) {
                 console.log('[WS][UNSUBSCRIBE] /topic/rooms');
             }
-            subscription?.unsubscribe();
+            safeUnsubscribe(subscription);
             unsubscribeConnection();
         };
     }, []);

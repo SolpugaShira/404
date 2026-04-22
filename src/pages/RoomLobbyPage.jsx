@@ -48,12 +48,22 @@ const RoomLobbyPage = () => {
             });
         };
 
+        const safeUnsubscribe = (sub) => {
+            try {
+                if (typeof sub?.unsubscribe === 'function') {
+                    sub.unsubscribe();
+                }
+            } catch {
+                // Игнорируем ошибки уже закрытого сокета
+            }
+        };
+
         let subscription = subscribeToRoom(getStompClient());
         const unsubscribeConnection = onStompConnectionChange((client) => {
             if (subscription) {
                 console.log(`[WS][UNSUBSCRIBE] /topic/session/${roomId}`);
             }
-            subscription?.unsubscribe();
+            safeUnsubscribe(subscription);
             subscription = subscribeToRoom(client);
         });
 
@@ -62,8 +72,10 @@ const RoomLobbyPage = () => {
             if (subscription) {
                 console.log(`[WS][UNSUBSCRIBE] /topic/session/${roomId}`);
             }
-            subscription?.unsubscribe();
-            unsubscribeConnection();
+            safeUnsubscribe(subscription);
+            if (typeof unsubscribeConnection === 'function') {
+                unsubscribeConnection();
+            }
         };
     }, [roomId]);
 

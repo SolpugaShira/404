@@ -88,7 +88,7 @@ const GamePage = () => {
             return;
         }
         const calculateSecondsLeft = () => {
-            if (!room.timerStartedAt) return Math.max(room.secondsLeft ?? 60, 60);
+            if (!room.timerStartedAt) return Math.max(room.secondsLeft ?? 10, 10);
             const seconds = (-Date.now() + room.timerStartedAt) / 1000 + 10;
             return Math.round(Math.max(seconds, 0));
         };
