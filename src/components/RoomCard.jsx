@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import user from '../assets/User.svg';
+import user from '../assets/SVG/commonSVG/User.svg';
 
 const RoomCard = ({ room }) => {
     const { id, name, maxSeats, entryFee, currentParticipants, status, theme } = room;

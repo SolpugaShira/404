@@ -1,6 +1,6 @@
 import { Outlet, Link } from 'react-router-dom';
 import { useUser } from '../context/useUser';
-import filtr from '../assets/Icon.svg';
+import filtr from '../assets/SVG/commonSVG/Icon.svg';
 
 const SearchBar = ({ value, onChange }) => {
     const { user } = useUser();

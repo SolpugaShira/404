@@ -43,14 +43,11 @@ const Layout = () => {
 
     return (
         <div className="app-shell">
-            <div className="background-glow background-glow--one" />
-            <div className="background-glow background-glow--two" />
             <div className="app">
                 <header className="site-header">
                     <div>
                         <nav>
-                            <Link to="/">Комнаты</Link>
-                            <Link to="/account">Профиль</Link>
+                            <Link to="/">БЕЗУМНЫЙ КАЗИК 228</Link>
                         </nav>
                     </div>
                     <div className="header-side">
@@ -61,13 +58,6 @@ const Layout = () => {
                                 <span>{HTTP_BASE_URL_LABEL}</span>
                             </div>
                         </div>
-                        <div className="header-user">
-                            <span className="header-user__name">{user.username}</span>
-                            <span className="header-user__meta">
-                                {user.stats?.gamesPlayed ?? 0} игр
-                            </span>
-                        </div>
-                        <div className="user-balance">бонусы: {user.balance} </div>
                         <button type="button" className="logout-btn" onClick={() => logoutUser()}>
                             Выйти
                         </button>

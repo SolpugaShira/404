@@ -100,7 +100,6 @@ button:disabled {
   gap: 1.5rem;
   margin-bottom: 2rem;
   padding: 1.3rem 1.5rem;
-  border: 1px solid rgba(138, 167, 204, 0.28);
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.82);
 }
@@ -209,12 +208,8 @@ nav a {
 .logout-btn {
   color: #324a65;
   background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(138, 167, 204, 0.22);
 }
 
-.logout-btn:hover {
-  background: rgba(255, 255, 255, 0.98);
-}
 
 .page-heading {
   display: flex;
@@ -289,49 +284,49 @@ nav a {
 }
 
 .GOLF-1{
-  background-image: url('./assets/популярное 1.svg');
+  background-image: url('assets/SVG/Home_Assets/golf1.svg');
 }
 .GOLF-2{
-  background-image: url('./assets/популярное 1-1.svg');
+  background-image: url('assets/SVG/Home_Assets/golf2.svg');
 }
 .GOLF-3{
-  background-image: url('./assets/популярное 1-2.svg');
+  background-image: url('assets/SVG/Home_Assets/golf3.svg');
 }
 .GOLF-4{
-  background-image: url('./assets/популярное 7-1.svg');
+  background-image: url('assets/SVG/Home_Assets/golf5.svg');
 }
 .GOLF-5{
-  background-image: url('./assets/популярное 7.svg');
+  background-image: url('assets/SVG/Home_Assets/golf4.svg');
 }
 .GOLF-6{
-  background-image: url('./assets/популярное 7-2.svg');
+  background-image: url('assets/SVG/Home_Assets/golf6.svg');
 }
 .GOLF-7{
-  background-image: url('./assets/популярное 8.svg');
+  background-image: url('assets/SVG/Home_Assets/golf7.svg');
 }
 .TENNIS-1{
-  background-image: url('./assets/теннис.svg');
+  background-image: url('assets/SVG/Home_Assets/tennis1.svg');
 }
 .TENNIS-2{
-  background-image: url('./assets/теннис-3.svg');
+  background-image: url('assets/SVG/Home_Assets/tennis2.svg');
 }
 .TENNIS-3{
-  background-image: url('./assets/теннис-5.svg');
+  background-image: url('assets/SVG/Home_Assets/tennis3.svg');
 }
 .RACING-1{
-  background-image: url('./assets/популярное 10-1.svg');
+  background-image: url('assets/SVG/Home_Assets/racing1.svg');
 }
 .RACING-2{
-  background-image: url('./assets/популярное 10-2.svg');
+  background-image: url('assets/SVG/Home_Assets/racing2.svg');
 }
 .RACING-2{
-  background-image: url('./assets/популярное 10-2.svg');
+  background-image: url('assets/SVG/Home_Assets/racing2.svg');
 }
 .RACING-3{
-  background-image: url('./assets/популярное 12.svg');
+  background-image: url('assets/SVG/Home_Assets/racing4.svg');
 }
 .RACING-4{
-  background-image: url('./assets/популярное 13.svg');
+  background-image: url('assets/SVG/Home_Assets/racing5.svg');
 }
 
 .room-card:hover {
@@ -1032,7 +1027,7 @@ nav a {
 
 
 .GOLFT{
-  background-image: url("./assets/карточка игры.svg");
+  background-image: url("assets/SVG/LobbySVG/GOLFL.svg");
   object-fit: cover;
   background-repeat: no-repeat;          /* отключаем дублирование */
   background-size: cover;                /* растягиваем на всю площадь с сохранением пропорций */
@@ -1042,7 +1037,7 @@ nav a {
   z-index: 10;
 }
 .TENNIST{
-  background-image: url("./assets/Group 35.svg");
+  background-image: url("assets/SVG/LobbySVG/TENNISL.svg");
   object-fit: cover;
   background-repeat: no-repeat;          /* отключаем дублирование */
   background-size: cover;                /* растягиваем на всю площадь с сохранением пропорций */
@@ -1052,7 +1047,7 @@ nav a {
   z-index: 10;
 }
 .RACINGT{
-  background-image: url("./assets/Group 37.svg");
+  background-image: url("assets/SVG/LobbySVG/RACINGL.svg");
   object-fit: cover;
   background-repeat: no-repeat;          /* отключаем дублирование */
   background-size: cover;                /* растягиваем на всю площадь с сохранением пропорций */
@@ -1486,25 +1481,25 @@ nav a {
 }
 
 .GOLFG-0{
-  background-image: url("./assets/Group 39.svg");
+  background-image: url("assets/SVG/GOLF_ingame/GOLF0.svg");
 }
 .GOLFG-1{
-  background-image: url("./assets/Group 40.svg");
+  background-image: url("assets/SVG/GOLF_ingame/GOLF1.svg");
 }
 .GOLFG-2{
-  background-image: url("./assets/Group 41.svg");
+  background-image: url("assets/SVG/GOLF_ingame/GOLF2.svg");
 }
 .GOLFG-3{
-  background-image: url("./assets/Group 42.svg");
+  background-image: url("assets/SVG/GOLF_ingame/GOLF3.svg");
 }
 .GOLFG-4{
-  background-image: url("./assets/Group 43.svg");
+  background-image: url("assets/SVG/GOLF_ingame/GOLF4.svg");
 }
-.GOLFG-5{
-  background-image: url("./assets/Group 44.svg");
+.GOLFG-5, .GOLFG-6,.GOLFG-7{
+  background-image: url("assets/SVG/GOLF_ingame/GOLF5.svg");
 }
 
-.GOLFG-0, .GOLFG-1, .GOLFG-2, .GOLFG-3, .GOLFG-4, .GOLFG-5 {
+.GOLFG-0, .GOLFG-1, .GOLFG-2, .GOLFG-3, .GOLFG-4, .GOLFG-5, .GOLFG-6, .GOLFG-7 {
   background-color: #86ab5d;
   background-repeat: no-repeat;
   background-size: 100% auto;      /* ширина 100% от элемента, высота автоматически (как получится) */
@@ -1514,23 +1509,39 @@ nav a {
   z-index: 10;
 }
 
-.GOLFG-0{
-  background-image: url("./assets/Group 39.svg");
+.TENNISG-0{background-image: url("assets/SVG/Tennis_ingame/TENNIS1.svg");}
+.TENNISG-1{background-image: url("assets/SVG/Tennis_ingame/TENNIS2.svg");}
+.TENNISG-2, .TENNISG-3, .TENNISG-4, .TENNISG-5, .TENNISG-6, .TENNISG-7{
+  background-image: url("assets/SVG/Tennis_ingame/TENNIS3.svg");
 }
-.GOLFG-1{
-  background-image: url("./assets/Group 40.svg");
+.TENNISG-0, .TENNISG-1, .TENNISG-2, .TENNISG-3, .TENNISG-4, .TENNISG-5, .TENNISG-6, .TENNISG-7 {
+  background-color: #86a9ab;
+  background-repeat: no-repeat;
+  background-size: 100% auto;      /* ширина 100% от элемента, высота автоматически (как получится) */
+  background-position: left top;   /* стартовая позиция (можно также "top left" или "start" – но left top надёжнее) */
+  width: 100%;
+  height: 100%;                    /* если нужна именно такая высота элемента – оставляем, иначе замени на auto */
+  z-index: 10;
 }
-.GOLFG-2{
-  background-image: url("./assets/Group 41.svg");
-}
-.GOLFG-3{
-  background-image: url("./assets/Group 42.svg");
-}
-.GOLFG-4{
-  background-image: url("./assets/Group 43.svg");
-}
-.GOLFG-5{
-  background-image: url("./assets/Group 44.svg");
+
+
+.RACINGG-0{ background-image: url("assets/SVG/Racing_ingame/Racing0.svg")}
+.RACINGG-1{ background-image: url("assets/SVG/Racing_ingame/Racing1.svg")}
+.RACINGG-2{ background-image: url("assets/SVG/Racing_ingame/Racing2.svg")}
+.RACINGG-3{ background-image: url("assets/SVG/Racing_ingame/Racing3.svg")}
+.RACINGG-4{ background-image: url("assets/SVG/Racing_ingame/Racing4.svg")}
+.RACINGG-5{ background-image: url("assets/SVG/Racing_ingame/Racing5.svg")}
+.RACINGG-6{ background-image: url("assets/SVG/Racing_ingame/Racing6.svg")}
+.RACINGG-7{ background-image: url("assets/SVG/Racing_ingame/Racing7.svg")}
+
+.RACINGG-0, .RACINGG-1, .RACINGG-2, .RACINGG-3, .RACINGG-4, .RACINGG-5, .RACINGG-6, .RACINGG-7{
+  background-color: #c87c62;
+  background-repeat: no-repeat;
+  background-size: 100% auto;      /* ширина 100% от элемента, высота автоматически (как получится) */
+  background-position: left top;   /* стартовая позиция (можно также "top left" или "start" – но left top надёжнее) */
+  width: 100%;
+  height: 100%;                    /* если нужна именно такая высота элемента – оставляем, иначе замени на auto */
+  z-index: 10;
 }
 
 

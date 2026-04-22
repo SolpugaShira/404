@@ -70,19 +70,16 @@ const AccountPage = () => {
         { label: 'Побед', value: stats.gamesWon },
         { label: 'Win rate', value: `${stats.winRate}%` },
         { label: 'Лучший выигрыш', value: stats.biggestWin },
-        { label: 'Всего выиграно', value: stats.totalWinnings },
-        { label: 'Чистый итог', value: stats.netProfit },
+        { label: 'Всего выиграно', value: stats.totalWinnings }
     ];
 
     return (
         <div className="account-page">
             <section className="page-heading">
                 <div>
-                    <div className="eyebrow">Профиль</div>
                     <h1>{user.username}</h1>
                     <p>Статистика строится по завершённым играм и финансовым операциям пользователя.</p>
                 </div>
-                <div className="heading-chip">{loading ? 'Обновление...' : `${user.balance} бонусов`}</div>
             </section>
 
             <section className="profile-hero">

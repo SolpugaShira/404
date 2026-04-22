@@ -347,6 +347,7 @@ const GamePage = () => {
 
     const theme = `${room.theme?.slice(0, -2)}G` ?? "GOLFG";
     // console.log(participants)
+    // console.log(room.theme);
 
     return (
         <div className="game-page">
@@ -376,7 +377,7 @@ const GamePage = () => {
                     </ul>
                 </aside>
 
-                <main className={`game-area ${theme}-${Math.min(participants.length, 5)}`}>
+                <main className={`game-area ${theme}-${Math.min(participants.length, 7)}`}>
                     {showCountdown && (
                         <div className="countdown-overlay">
                             <div className="countdown-number">{countdownValue}</div>
