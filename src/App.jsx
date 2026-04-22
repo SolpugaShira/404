@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { UserProvider } from './context/UserContext.jsx';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
-import GameRoomPage from './pages/GameRoomPage';
 import AccountPage from './pages/AccountPage';
 import NotFoundPage from './pages/NotFoundPage';
 import RoomLobbyPage from "./pages/RoomLobbyPage.jsx";
@@ -15,7 +14,6 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Layout />}>
                         <Route index element={<HomePage />} />
-                        <Route path="room/:roomId" element={<GameRoomPage />} />
                         <Route path="room/:roomId/lobby" element={<RoomLobbyPage />} />
                         <Route path="/game/:roomId" element={<GamePage />} />
                         <Route path="account" element={<AccountPage />} />

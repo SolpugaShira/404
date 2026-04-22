@@ -322,6 +322,7 @@ const GamePage = () => {
     const isFinished = room.status === 'COMPLETED';
     const userIsParticipant = participants.some((p) => p.userId === user?.id);
     const currentUserParticipant = participants.find((p) => p.userId === user?.id) ?? null;
+    console.log();
 
     const canActivateBoost =
         isWaiting &&
@@ -329,11 +330,18 @@ const GamePage = () => {
         room.boostEnabled &&
         !currentUserParticipant?.hasBoost &&
         user?.balance >= (room.boostCost ?? 0);
+    if (currentUserParticipant){
+        if (currentUserParticipant.hasBoost){
+        currentUserParticipant.weight = room.boostWeightMultiplier;
+        }   else{ currentUserParticipant.weight = 1}}
 
     const winPercent = (() => {
         if (!userIsParticipant || !currentUserParticipant) return 0;
-        const totalWeight = participants.reduce((sum, p) => sum + (p.weight || 1), 0);
+        const mayWeight = participants.reduce((sum, p) => sum + (p.weight || 1), 0);
+        const minWeight = room.maxSeats - participants.length;
+        const totalWeight = minWeight + mayWeight;
         const userWeight = currentUserParticipant.weight || 1;
+        // console.log(userWeight, totalWeight)
         return totalWeight > 0 ? Math.round((userWeight / totalWeight) * 100) : 0;
     })();
 
