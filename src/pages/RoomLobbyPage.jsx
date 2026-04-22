@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { fetchRoomById, joinRoom, normalizeSessionMessage } from '../api/roomsApi';
+import { fetchRoomById, bookSeats, normalizeSessionMessage } from '../api/roomsApi';
 import { useUser } from '../context/useUser';
 import { getStompClient, onStompConnectionChange } from '../stompClient';
 
@@ -12,6 +12,7 @@ const RoomLobbyPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [actionLoading, setActionLoading] = useState(false);
+    const [seatsToBook, setSeatsToBook] = useState(1);
 
     useEffect(() => {
         let cancelled = false;
@@ -54,7 +55,7 @@ const RoomLobbyPage = () => {
                     sub.unsubscribe();
                 }
             } catch {
-                // Игнорируем ошибки уже закрытого сокета
+                return;
             }
         };
 
@@ -79,14 +80,39 @@ const RoomLobbyPage = () => {
         };
     }, [roomId]);
 
-    const handlePlay = async () => {
+    if (loading) return <div className="loading">Загрузка...</div>;
+    if (error) return <div className="error">Ошибка: {error}</div>;
+    if (!room) return <div className="error">Комната не найдена</div>;
+
+    const participants = room.participants ?? [];
+    const occupied = room.currentParticipants ?? participants.length;
+    const maxSeats = room.maxSeats ?? 0;
+    const maxAllowed = Math.floor(maxSeats / 2);
+    const freeSeats = Math.max(maxSeats - occupied, 0);
+    const maxBookable = Math.max(1, Math.min(maxAllowed || 1, freeSeats || 1));
+    const selectedSeats = Math.min(Math.max(seatsToBook, 1), maxBookable);
+    const entryFee = room.entryFee ?? 0;
+    const boostCost = room.boostCost ?? 0;
+    const boostMultiplier = room.boostWeightMultiplier ?? 1;
+    const prizePool = room.currentPrizePool ?? 0;
+    const commission = 5;
+    const theme = room.theme.slice(0, -2) ?? 'GOLF';
+    const userIsParticipant = participants.some((p) => p.userId === user?.id);
+    const canIncreaseSeats = selectedSeats < maxAllowed && selectedSeats < freeSeats;
+    const joinDisabled = actionLoading || (!userIsParticipant && freeSeats <= 0);
+
+    const handleJoin = async () => {
         if (!user) {
             navigate('/login');
             return;
         }
+        if (userIsParticipant) {
+            navigate(`/game/${roomId}`);
+            return;
+        }
         setActionLoading(true);
         try {
-            await joinRoom(roomId, user.id, user.username);
+            await bookSeats(roomId, user.id, selectedSeats);
             await refreshUser();
             setError(null);
             navigate(`/game/${roomId}`);
@@ -96,24 +122,6 @@ const RoomLobbyPage = () => {
             setActionLoading(false);
         }
     };
-
-    if (loading) return <div className="loading">Загрузка...</div>;
-    if (error) return <div className="error">Ошибка: {error}</div>;
-    if (!room) return <div className="error">Комната не найдена</div>;
-
-    const participants = room.participants ?? [];
-    const occupied = room.currentParticipants ?? participants.length;
-    const maxSeats = room.maxSeats ?? 0;
-    const entryFee = room.entryFee ?? 0;
-    const boostCost = room.boostCost ?? 0;
-    const boostMultiplier = room.boostWeightMultiplier ?? 1;
-    const prizePool = room.currentPrizePool ?? 0;
-    const commission = 5;
-    const theme = room.theme.slice(0,-2) ?? "GOLF";
-    const isWaiting = room.status === 'WAITING' || room.status === 'FILLING';
-    const userIsParticipant = participants.some(p => p.userId === user?.id);
-    // console.log(theme, `${theme}T`)
-    // console.log(room)
 
     return (
         <div className="lobby-page">
@@ -155,9 +163,41 @@ const RoomLobbyPage = () => {
                             <span>{commission}%</span>
                         </div>
                     </div>
-                    <button className="play-button" onClick={handlePlay}  disabled={actionLoading}>
-                        {actionLoading ? 'Подключение...' : userIsParticipant ? 'Вернуться в игру' : 'Играть'}
-                    </button>
+
+                    <div className="room-actions" style={{ marginLeft: '70%', width: '300px', minWidth: '200px' }}>
+                        {!userIsParticipant && (
+                            <>
+                                <div className="info-row" style={{ justifyContent: 'center', alignItems: 'center', gap: '10px', padding: 0 }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSeatsToBook((prev) => Math.max(1, Math.min(maxBookable, prev - 1)))}
+                                        disabled={selectedSeats <= 1 || actionLoading}
+                                        style={{ width: '44px', height: '44px', padding: 0, borderRadius: '999px', fontSize: '28px', fontWeight: 700 }}
+                                    >
+                                        -
+                                    </button>
+                                    <span style={{ minWidth: '32px', textAlign: 'center', fontWeight: 700, fontSize: '28px' }}>
+                                        {selectedSeats} мест
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSeatsToBook((prev) => Math.max(1, Math.min(maxBookable, prev + 1)))}
+                                        disabled={!canIncreaseSeats || actionLoading}
+                                        style={{ width: '44px', height: '44px', padding: 0, borderRadius: '999px', fontSize: '28px', fontWeight: 700 }}
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                                <div className="info-row" style={{ justifyContent: 'center', paddingTop: 0 }}>
+                                    {(selectedSeats / maxSeats * 100).toFixed(0)}%
+                                </div>
+                            </>
+                        )}
+
+                        <button className="play-button" onClick={handleJoin} disabled={joinDisabled} style={{ marginLeft: 0, marginTop: 0, width: '100%' }}>
+                            {actionLoading ? 'Подключение...' : userIsParticipant ? 'Вернуться в игру' : 'Присоединиться'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

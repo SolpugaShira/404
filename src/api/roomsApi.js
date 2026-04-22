@@ -4,7 +4,8 @@ import { request } from './http';
 const normalizeParticipant = (participant) => ({
     userId: participant.userId,
     username: participant.username,
-    hasBoost: participant.hasBoost ?? false,
+    seats: participant.seats ?? 1,
+    boosts: participant.boosts ?? 0,
     isBot: participant.isBot ?? participant.bot ?? false,
 });
 
@@ -140,8 +141,8 @@ export const fetchWinnerByRoomId = async (roomId) => {
     return normalizeRoundResult(winner);
 };
 
-export const joinRoom = async (roomId, userId, username) => {
-    publishRoomCommand(`/app/room/${roomId}/join`, { userId, username });
+export const bookSeats = async (roomId, userId, seats) => {
+    publishRoomCommand(`/app/room/${roomId}/book-seats`, { userId, seats });
 };
 
 export const leaveRoom = async (roomId, userId) => {
@@ -159,8 +160,8 @@ export const leaveRoom = async (roomId, userId) => {
     };
 };
 
-export const activateBoost = async (roomId, userId) => {
-    publishRoomCommand(`/app/room/${roomId}/boost`, { userId });
+export const activateBoost = async (roomId, userId, boosts) => {
+    publishRoomCommand(`/app/room/${roomId}/boost`, { userId, boosts });
 };
 
 export const normalizeRoomsMessage = (rooms) => rooms.map(normalizeRoomSummary);

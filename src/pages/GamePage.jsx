@@ -272,12 +272,12 @@ const GamePage = () => {
     }, [roomId, mergeStableRoomState]);
 
     // Активация буста
-    const handleActivateBoost = async () => {
+    const handleActivateBoost = async (boostsCount) => {
         if (!user) return;
         setActionLoading(true);
         try {
             console.log('[GamePage] Activating boost...');
-            await activateBoost(roomId, user.id);
+            await activateBoost(roomId, user.id, boostsCount);
             await refreshUser();
             setError(null);
             console.log('[GamePage] Boost activated successfully');
@@ -305,21 +305,32 @@ const GamePage = () => {
     const isWaiting = !isFinished;
     const userIsParticipant = participants.some((p) => p.userId === user?.id);
     const currentUserParticipant = participants.find((p) => p.userId === user?.id) ?? null;
+    const availableBoostsToBuy = currentUserParticipant ? (currentUserParticipant.seats - currentUserParticipant.boosts) : 0;
 
     const canActivateBoost =
         isWaiting &&
         userIsParticipant &&
         room.boostEnabled &&
-        !currentUserParticipant?.hasBoost &&
+        availableBoostsToBuy > 0 &&
         user?.balance >= (room.boostCost ?? 0);
 
     const winPercent = (() => {
         if (!userIsParticipant || !currentUserParticipant) return 0;
-        const mayWeight = participants.reduce((sum, p) => sum + (p.hasBoost ? room.boostWeightMultiplier : 1), 0);
-        const minWeight = room.maxSeats - participants.length;
-        const totalWeight = minWeight + mayWeight;
-        const userWeight = currentUserParticipant.weight || 1;
-        return totalWeight > 0 ? Math.round((userWeight / totalWeight) * 100) : 0;
+
+        const currentWeight = participants.reduce((sum, p) => {
+            const normalSeats = p.seats - p.boosts;
+            const boostedWeight = p.boosts * (room.boostWeightMultiplier || 1);
+            return sum + normalSeats + boostedWeight;
+        }, 0);
+
+        const emptySeats = Math.max(0, room.maxSeats - (room.currentParticipants || 0));
+        const totalRoomWeight = currentWeight + emptySeats;
+
+        const myNormalSeats = currentUserParticipant.seats - currentUserParticipant.boosts;
+        const myBoostedWeight = currentUserParticipant.boosts * (room.boostWeightMultiplier || 1);
+        const myTotalWeight = myNormalSeats + myBoostedWeight;
+
+        return totalRoomWeight > 0 ? Math.round((myTotalWeight / totalRoomWeight) * 100) : 0;
     })();
 
     const theme = `${room.theme?.slice(0, -2)}G` ?? "GOLFG";
@@ -339,12 +350,12 @@ const GamePage = () => {
 
             <div className="game-main-row">
                 <aside className="players-panel">
-                    <h3>Игроки ({participants.length}/{room.maxSeats})</h3>
+                    <h3>Занято мест: ({room.currentParticipants}/{room.maxSeats})</h3>
                     <ul className="players-list">
                         {participants.map((p, index) => (
                             <li key={p.userId ?? p.username + '-' + index} className={`player-item ${p.isBot ? 'bot' : 'human'}`}>
-                                <span className="player-name">{p.username}</span>
-                                {p.hasBoost && <span className="boost-indicator">⚡</span>}
+                                <span className="player-name">{p.username} <small style={{color: '#888'}}>(x{p.seats})</small></span>
+                                {p.boosts > 0 && <span className="boost-indicator">⚡{p.boosts > 1 ? `x${p.boosts}` : ''}</span>}
                                 {winner && winner.username === p.username && (
                                     <span className="winner-crown">🏆</span>
                                 )}
@@ -377,12 +388,12 @@ const GamePage = () => {
                                     {room.boostEnabled && (
                                         <button
                                             className="boost-button"
-                                            onClick={handleActivateBoost}
+                                            onClick={() => handleActivateBoost(1)}
                                             disabled={actionLoading || !canActivateBoost}
                                         >
-                                            {currentUserParticipant?.hasBoost
-                                                ? 'Буст активирован'
-                                                : `Повысить шанс (${room.boostCost ?? 0})`}
+                                            {availableBoostsToBuy === 0
+                                                ? 'Бусты активированы'
+                                                : `Купить буст (${room.boostCost ?? 0})`}
                                         </button>
                                     )}
                                 </>
