@@ -1,4 +1,5 @@
 // GamePage.jsx
+import Golfg1 from "../assets/Animations/golfg1.jsx";
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -27,7 +28,6 @@ const GamePage = () => {
     const [showCountdown, setShowCountdown] = useState(false);
     const [countdownValue, setCountdownValue] = useState(3);
     const [showAnimation, setShowAnimation] = useState(false);
-    const animationContainerRef = useRef(null);
     const countdownTimersRef = useRef([]);
     const countdownTriggeredRef = useRef(false); // флаг, что отсчёт уже запущен
 
@@ -37,12 +37,17 @@ const GamePage = () => {
     const mountedRef = useRef(true);
     const initialLoadDoneRef = useRef(false);
 
+    // Логирование монтирования компонента
+    console.log('[GamePage] Render. showCountdown:', showCountdown, 'showAnimation:', showAnimation, 'displaySecondsLeft:', displaySecondsLeft);
+
     // Очистка при размонтировании
     useEffect(() => {
         mountedRef.current = true;
+        console.log('[GamePage] Mounted');
         return () => {
             mountedRef.current = false;
             countdownTimersRef.current.forEach(clearTimeout);
+            console.log('[GamePage] Unmounted');
         };
     }, []);
 
@@ -78,6 +83,7 @@ const GamePage = () => {
             boostWeightMultiplier: mergedRoom.boostWeightMultiplier ?? 0,
             description: mergedRoom.description ?? '',
         };
+        console.log('[GamePage] mergeStableRoomState:', mergedRoom);
         return mergedRoom;
     }, []);
 
@@ -85,6 +91,7 @@ const GamePage = () => {
     useEffect(() => {
         if (!room || room.status === 'COMPLETED') {
             setDisplaySecondsLeft(0);
+            console.log('[GamePage] Timer reset (no room or completed)');
             return;
         }
         const calculateSecondsLeft = () => {
@@ -92,10 +99,15 @@ const GamePage = () => {
             const seconds = (-Date.now() + room.timerStartedAt) / 1000 + 10;
             return Math.round(Math.max(seconds, 0));
         };
-        setDisplaySecondsLeft(calculateSecondsLeft());
+        const update = () => {
+            const sec = calculateSecondsLeft();
+            setDisplaySecondsLeft(sec);
+            console.log('[GamePage] Timer update:', sec);
+        };
+        update();
         const intervalId = setInterval(() => {
             if (mountedRef.current) {
-                setDisplaySecondsLeft(calculateSecondsLeft());
+                update();
             }
         }, 1000);
         return () => clearInterval(intervalId);
@@ -104,6 +116,7 @@ const GamePage = () => {
     // Проверка авторизации
     useEffect(() => {
         if (!isAuthenticated) {
+            console.log('[GamePage] Not authenticated, redirect to login');
             navigate('/login', { replace: true, state: { from: `/game/${roomId}` } });
         }
     }, [isAuthenticated, navigate, roomId]);
@@ -111,6 +124,7 @@ const GamePage = () => {
     // Загрузка комнаты
     useEffect(() => {
         if (!roomId) {
+            console.log('[GamePage] No roomId, redirect to lobby');
             navigate('/lobby', { replace: true });
             return;
         }
@@ -118,6 +132,7 @@ const GamePage = () => {
         const loadRoom = async () => {
             try {
                 setLoading(true);
+                console.log('[GamePage] Fetching room data...');
                 const data = await fetchRoomById(roomId);
                 if (cancelled || !mountedRef.current) return;
                 setRoom((prev) => mergeStableRoomState(data, prev));
@@ -126,8 +141,10 @@ const GamePage = () => {
                     if (mountedRef.current) setWinner(latestWinner);
                 }
                 setError(null);
+                console.log('[GamePage] Room data loaded:', data);
             } catch (err) {
                 if (!cancelled && mountedRef.current) {
+                    console.error('[GamePage] Failed to load room:', err);
                     setError(err.message);
                     if (err.message.includes('404')) {
                         setTimeout(() => navigate('/lobby', { replace: true }), 2000);
@@ -152,7 +169,7 @@ const GamePage = () => {
             if (!subscription) return;
             try {
                 const client = getStompClient();
-                if (!client || !client.connected) return; // не пытаемся отписаться, если сокет закрыт
+                if (!client || !client.connected) return;
                 if (typeof subscription.unsubscribe === 'function') {
                     subscription.unsubscribe();
                 }
@@ -164,6 +181,7 @@ const GamePage = () => {
         };
         const subscribeToTopics = (client) => {
             if (!client?.connected) return;
+            console.log('[GamePage] Subscribing to WebSocket topics...');
             unsubscribeAll();
             fetchRoomById(roomId)
                 .then((data) => {
@@ -184,12 +202,14 @@ const GamePage = () => {
                             })
                             .catch(console.error);
                     }
+                    console.log('[GamePage] WebSocket initial sync:', data);
                 })
                 .catch(console.error);
             try {
                 const sessionSub = client.subscribe(`/topic/session/${roomId}`, (message) => {
                     try {
                         const payload = JSON.parse(message.body);
+                        console.log('[GamePage] Session message received:', payload);
                         if (!mountedRef.current) return;
                         if (!initialLoadDoneRef.current) {
                             setLoading(false);
@@ -228,83 +248,72 @@ const GamePage = () => {
         if (!user) return;
         setActionLoading(true);
         try {
+            console.log('[GamePage] Activating boost...');
             await activateBoost(roomId, user.id);
             await refreshUser();
             setError(null);
+            console.log('[GamePage] Boost activated successfully');
         } catch (err) {
+            console.error('[GamePage] Boost activation failed:', err);
             setError(err.message);
         } finally {
             setActionLoading(false);
         }
     };
 
-    // Загрузка SVG-анимации
-    const loadSvgAnimation = useCallback(async (theme) => {
-        if (!animationContainerRef.current) return;
-        try {
-            const response = await fetch(`/assets/animations/${theme}.html`);
-            console.log("Loaded animation, Loaded animation, Loaded animation, Loaded animation,");
-            const html = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const svgElement = doc.querySelector('svg-animate');
-            if (svgElement) {
-                animationContainerRef.current.innerHTML = '';
-                animationContainerRef.current.appendChild(svgElement);
-            }
-            if (window.Figmania && typeof window.Figmania.load === 'function') {
-                window.Figmania.load(animationContainerRef.current);
-            } else if (window.Figmania && typeof window.Figmania.observe === 'function') {
-                // Альтернативный метод – наблюдение за новыми элементами
-                window.Figmania.observe(animationContainerRef.current);
-            }
-
-        } catch (err) {
-            console.error('Failed to load animation:', err);
-        }
-    }, []);
-
-    // Эффект для обратного отсчёта (исправлен)
+    // Эффект для обратного отсчёта и запуска анимации
     useEffect(() => {
         if (!room) return;
         const isWaiting = room.status === 'WAITING' || room.status === 'FILLING';
-        if (!isWaiting) return;
+        if (!isWaiting) {
+            console.log('[GamePage] Not waiting state, skip countdown. Status:', room.status);
+            return;
+        }
 
-        // Запускаем только когда таймер <= 3 и ещё не запускали
+        console.log('[GamePage] Countdown effect. displaySecondsLeft:', displaySecondsLeft, 'triggered:', countdownTriggeredRef.current);
+
         if (displaySecondsLeft <= 3 && displaySecondsLeft > 0 && !countdownTriggeredRef.current) {
             countdownTriggeredRef.current = true;
+            console.log('[GamePage] Starting countdown from 3');
 
-            // Очищаем предыдущие таймеры (на всякий случай)
             countdownTimersRef.current.forEach(clearTimeout);
             countdownTimersRef.current = [];
 
             setShowCountdown(true);
             setCountdownValue(3);
             setShowAnimation(false);
+            console.log('[GamePage] Show countdown overlay, value=3');
 
             const timers = [];
             timers.push(setTimeout(() => {
-                if (mountedRef.current) setCountdownValue(2);
+                if (mountedRef.current) {
+                    setCountdownValue(2);
+                    console.log('[GamePage] Countdown value=2');
+                }
             }, 1000));
             timers.push(setTimeout(() => {
-                if (mountedRef.current) setCountdownValue(1);
+                if (mountedRef.current) {
+                    setCountdownValue(1);
+                    console.log('[GamePage] Countdown value=1');
+                }
             }, 2000));
             timers.push(setTimeout(() => {
                 if (mountedRef.current) {
                     setShowCountdown(false);
                     setShowAnimation(true);
-                    const theme = room.theme ? `${room.theme.slice(0, -2)}G` : 'GOLFG';
-                    loadSvgAnimation(theme);
+                    console.log('[GamePage] Countdown finished, showing animation');
                 }
             }, 3000));
             countdownTimersRef.current = timers;
         }
 
-        // Сбрасываем флаг, когда таймер снова становится > 3 (например, при новом раунде)
         if (displaySecondsLeft > 3) {
+            if (countdownTriggeredRef.current) {
+                console.log('[GamePage] Resetting countdown trigger flag because timer > 3');
+            }
             countdownTriggeredRef.current = false;
         }
-    }, [displaySecondsLeft, room, loadSvgAnimation]);
+    }, [displaySecondsLeft, room]);
 
     // ===== Условные возвраты =====
     if (!isAuthenticated) return <div className="loading">Проверка авторизации...</div>;
@@ -322,7 +331,6 @@ const GamePage = () => {
     const isFinished = room.status === 'COMPLETED';
     const userIsParticipant = participants.some((p) => p.userId === user?.id);
     const currentUserParticipant = participants.find((p) => p.userId === user?.id) ?? null;
-    console.log();
 
     const canActivateBoost =
         isWaiting &&
@@ -330,24 +338,18 @@ const GamePage = () => {
         room.boostEnabled &&
         !currentUserParticipant?.hasBoost &&
         user?.balance >= (room.boostCost ?? 0);
-    if (currentUserParticipant){
-        if (currentUserParticipant.hasBoost){
-        currentUserParticipant.weight = room.boostWeightMultiplier;
-        }   else{ currentUserParticipant.weight = 1}}
 
     const winPercent = (() => {
         if (!userIsParticipant || !currentUserParticipant) return 0;
-        const mayWeight = participants.reduce((sum, p) => sum + (p.weight || 1), 0);
+        const mayWeight = participants.reduce((sum, p) => sum + (p.hasBoost ? room.boostWeightMultiplier : 1), 0);
         const minWeight = room.maxSeats - participants.length;
         const totalWeight = minWeight + mayWeight;
         const userWeight = currentUserParticipant.weight || 1;
-        // console.log(userWeight, totalWeight)
         return totalWeight > 0 ? Math.round((userWeight / totalWeight) * 100) : 0;
     })();
 
     const theme = `${room.theme?.slice(0, -2)}G` ?? "GOLFG";
-    // console.log(participants)
-    // console.log(room.theme);
+    console.log('[GamePage] Render game area. Theme:', theme, 'Participants:', participants.length, 'isWaiting:', isWaiting, 'isFinished:', isFinished);
 
     return (
         <div className="game-page">
@@ -385,7 +387,9 @@ const GamePage = () => {
                     )}
 
                     {showAnimation && (
-                        <div className="animation-container" ref={animationContainerRef}></div>
+                        <div className="animation-container" style={{ position: 'relative', zIndex: 10 }}>
+                            <Golfg1 />
+                        </div>
                     )}
 
                     {isWaiting && !showAnimation && !showCountdown && (
