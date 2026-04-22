@@ -9,23 +9,28 @@ const normalizeParticipant = (participant) => ({
     isBot: participant.isBot ?? participant.bot ?? false,
 });
 
-export const normalizeRoomSummary = (room) => ({
-    ...room,
-    id: room.id ?? room.roomId,
-    roomId: room.roomId ?? room.id,
-    name: room.name ?? 'Комната',
-    description: room.description ?? '',
-    maxSeats: room.maxSeats ?? room.seatsCount ?? 0,
-    entryFee: room.entryFee ?? 0,
-    prizePoolPercent: room.prizePoolPercent ?? 0,
-    boostEnabled: room.boostEnabled ?? false,
-    boostCost: room.boostCost ?? 0,
-    boostWeightMultiplier: room.boostWeightMultiplier ?? 0,
-    participants: (room.participants ?? []).map(normalizeParticipant),
-    currentParticipants: room.currentParticipants ?? room.participants?.length ?? 0,
-    currentPrizePool: room.currentPrizePool ?? 0,
-    status: room.status ?? 'WAITING',
-});
+export const normalizeRoomSummary = (room) => {
+    const participants = (room.participants ?? []).map(normalizeParticipant);
+    const currentParticipants = participants.reduce((sum, p) => sum + p.seats, 0);
+
+    return {
+        ...room,
+        id: room.id ?? room.roomId,
+        roomId: room.roomId ?? room.id,
+        name: room.name ?? 'Комната',
+        description: room.description ?? '',
+        maxSeats: room.maxSeats ?? room.seatsCount ?? 0,
+        entryFee: room.entryFee ?? 0,
+        prizePoolPercent: room.prizePoolPercent ?? 0,
+        boostEnabled: room.boostEnabled ?? false,
+        boostCost: room.boostCost ?? 0,
+        boostWeightMultiplier: room.boostWeightMultiplier ?? 0,
+        participants,
+        currentParticipants,
+        currentPrizePool: room.currentPrizePool ?? 0,
+        status: room.status ?? 'WAITING',
+    };
+};
 
 const normalizeSessionUpdate = (session) => {
     if (!session) {
@@ -33,13 +38,14 @@ const normalizeSessionUpdate = (session) => {
     }
 
     const participants = (session.participants ?? []).map(normalizeParticipant);
+    const currentParticipants = participants.reduce((sum, p) => sum + p.seats, 0);
 
     return {
         roomId: session.roomId ?? session.id,
         sessionId: session.sessionId ?? session.roomId ?? session.id,
         status: session.status ?? 'WAITING',
         participants,
-        currentParticipants: session.currentParticipants ?? participants.length,
+        currentParticipants,
         currentPrizePool: session.currentPrizePool ?? 0,
         timerStartedAt: session.timerStartedAt ?? 60,
         secondsLeft: session.secondsLeft ?? 0,
@@ -69,7 +75,7 @@ const mergeRoomState = (summary, sessionUpdate) => {
         boostWeightMultiplier: summary?.boostWeightMultiplier ?? 0,
         status: sessionUpdate?.status ?? summary?.status ?? 'WAITING',
         participants,
-        currentParticipants: sessionUpdate?.currentParticipants ?? participants.length ?? summary?.currentParticipants ?? 0,
+        currentParticipants: sessionUpdate?.currentParticipants ?? summary?.currentParticipants ?? participants.reduce((sum, p) => sum + p.seats, 0),
         currentPrizePool: sessionUpdate?.currentPrizePool ?? summary?.currentPrizePool ?? 0,
         timerStartedAt: sessionUpdate?.timerStartedAt ?? summary?.timerStartedAt ?? null,
         secondsLeft: sessionUpdate?.secondsLeft ?? summary?.secondsLeft ?? 0,

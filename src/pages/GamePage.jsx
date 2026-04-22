@@ -301,6 +301,7 @@ const GamePage = () => {
     if (!room) return <div className="error">Комната не найдена</div>;
 
     const participants = room.participants ?? [];
+    const maxPossibleUsers = participants.length + (room.maxSeats - room.currentParticipants);
     const isFinished = room.status === 'COMPLETED' && winner !== null;
     const isWaiting = !isFinished;
     const userIsParticipant = participants.some((p) => p.userId === user?.id);
@@ -350,7 +351,7 @@ const GamePage = () => {
 
             <div className="game-main-row">
                 <aside className="players-panel">
-                    <h3>Занято мест: ({room.currentParticipants}/{room.maxSeats})</h3>
+                    <h3>Участники: ({participants.length}/{maxPossibleUsers})</h3>
                     <ul className="players-list">
                         {participants.map((p, index) => (
                             <li key={p.userId ?? p.username + '-' + index} className={`player-item ${p.isBot ? 'bot' : 'human'}`}>

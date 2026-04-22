@@ -85,6 +85,7 @@ const RoomLobbyPage = () => {
     if (!room) return <div className="error">Комната не найдена</div>;
 
     const participants = room.participants ?? [];
+    const maxPossibleUsers = participants.length + (room.maxSeats - room.currentParticipants);
     const occupied = room.currentParticipants ?? participants.length;
     const maxSeats = room.maxSeats ?? 0;
     const maxAllowed = Math.floor(maxSeats / 2);
@@ -141,10 +142,7 @@ const RoomLobbyPage = () => {
                         <p style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#ffffff' }}>
                             {room.description || 'Описание отсутствует'}
                         </p>
-                        <div className="info-row">
-                            <span className="label">Участники:</span>
-                            <span>{occupied} / {maxSeats}</span>
-                        </div>
+                        <div className="info-row">Участники: ({participants.length}/{maxPossibleUsers})</div>
                         <div className="info-row">
                             <span className="label">Мин. мест для старта:</span>
                             <span>{room.minSeatsToStart ?? 0}</span>
