@@ -242,17 +242,23 @@ const GamePage = () => {
     const loadSvgAnimation = useCallback(async (theme) => {
         if (!animationContainerRef.current) return;
         try {
-            const response = await fetch(`./assets/animations/${theme}.html`);
-            // const response = await fetch(`./assets/animations/${theme}.html`);
+            const response = await fetch(`/assets/animations/${theme}.html`);
             console.log("Loaded animation, Loaded animation, Loaded animation, Loaded animation,");
             const html = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-            const svgElement = doc.querySelector('svg');
+            const svgElement = doc.querySelector('svg-animate');
             if (svgElement) {
                 animationContainerRef.current.innerHTML = '';
                 animationContainerRef.current.appendChild(svgElement);
             }
+            if (window.Figmania && typeof window.Figmania.load === 'function') {
+                window.Figmania.load(animationContainerRef.current);
+            } else if (window.Figmania && typeof window.Figmania.observe === 'function') {
+                // Альтернативный метод – наблюдение за новыми элементами
+                window.Figmania.observe(animationContainerRef.current);
+            }
+
         } catch (err) {
             console.error('Failed to load animation:', err);
         }
