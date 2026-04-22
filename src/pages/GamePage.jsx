@@ -333,7 +333,7 @@ const GamePage = () => {
         return totalRoomWeight > 0 ? Math.round((myTotalWeight / totalRoomWeight) * 100) : 0;
     })();
 
-    const theme = `${room.theme?.slice(0, -2)}G` ?? "GOLFG";
+    const theme = room.theme ? `${room.theme.slice(0, -2)}G` : "GOLFG";
     console.log('[GamePage] Render game area. Theme:', theme, 'Participants:', participants.length, 'isWaiting:', isWaiting, 'isFinished:', isFinished);
 
     return (
@@ -379,7 +379,13 @@ const GamePage = () => {
 
                     {isWaiting && !showAnimation && !showCountdown && (
                         <div className="waiting-state">
-                            <p className="timer">До автозапуска: {displaySecondsLeft} сек.</p>
+                            {room.status === 'WAITING' ? (
+                                <p className="timer" style={{ fontSize: '20px', maxWidth: '300px', textAlign: 'right' }}>
+                                    Ожидание игроков.<br />Для начала розыгрыша нужно не менее {room.minSeatsToStart} мест.
+                                </p>
+                            ) : (
+                                <p className="timer">До автозапуска: {displaySecondsLeft} сек.</p>
+                            )}
                             {userIsParticipant && (
                                 <>
                                     <div className="win-chance">

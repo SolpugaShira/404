@@ -89,14 +89,14 @@ const RoomLobbyPage = () => {
     const maxSeats = room.maxSeats ?? 0;
     const maxAllowed = Math.floor(maxSeats / 2);
     const freeSeats = Math.max(maxSeats - occupied, 0);
-    const maxBookable = Math.max(1, Math.min(maxAllowed || 1, freeSeats || 1));
-    const selectedSeats = Math.min(Math.max(seatsToBook, 1), maxBookable);
+    const maxBookable = Math.min(maxAllowed, freeSeats);
+    const selectedSeats = maxBookable > 0 ? Math.min(Math.max(seatsToBook, 1), maxBookable) : 1;
     const entryFee = room.entryFee ?? 0;
     const boostCost = room.boostCost ?? 0;
     const boostMultiplier = room.boostWeightMultiplier ?? 1;
     const prizePool = room.currentPrizePool ?? 0;
-    const commission = 5;
-    const theme = room.theme.slice(0, -2) ?? 'GOLF';
+    const commission = 100 - (room.prizePoolPercent ?? 100);
+    const theme = room.theme ? room.theme.slice(0, -2) : 'GOLF';
     const userIsParticipant = participants.some((p) => p.userId === user?.id);
     const canIncreaseSeats = selectedSeats < maxAllowed && selectedSeats < freeSeats;
     const joinDisabled = actionLoading || (!userIsParticipant && freeSeats <= 0);
@@ -138,22 +138,33 @@ const RoomLobbyPage = () => {
                 <div className={`info-block ${theme}T`}>
                     <div className="info-text">
                         <h2>{room.name || `Комната ${roomId.slice(-6)}`}</h2>
+                        <p style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#ffffff' }}>
+                            {room.description || 'Описание отсутствует'}
+                        </p>
                         <div className="info-row">
                             <span className="label">Участники:</span>
                             <span>{occupied} / {maxSeats}</span>
                         </div>
                         <div className="info-row">
+                            <span className="label">Мин. мест для старта:</span>
+                            <span>{room.minSeatsToStart ?? 0}</span>
+                        </div>
+                        <div className="info-row">
                             <span className="label">Цена входа:</span>
                             <span>{entryFee}</span>
                         </div>
-                        <div className="info-row">
-                            <span className="label">Стоимость буста:</span>
-                            <span>{boostCost}</span>
-                        </div>
-                        <div className="info-row">
-                            <span className="label">Множитель буста:</span>
-                            <span>{boostMultiplier}</span>
-                        </div>
+                        {room.boostEnabled && (
+                            <>
+                                <div className="info-row">
+                                    <span className="label">Стоимость буста:</span>
+                                    <span>{boostCost}</span>
+                                </div>
+                                <div className="info-row">
+                                    <span className="label">Множитель буста:</span>
+                                    <span>{boostMultiplier}</span>
+                                </div>
+                            </>
+                        )}
                         <div className="info-row">
                             <span className="label">Призовой фонд:</span>
                             <span>{prizePool}</span>
@@ -200,6 +211,23 @@ const RoomLobbyPage = () => {
                     </div>
                 </div>
             </div>
+            <section style={{ padding: '40px 24px', maxWidth: '800px', margin: '0 auto', color: '#333' }}>
+                <h3 style={{ fontSize: '24px', marginBottom: '16px' }}>Как работает расчет вероятности?</h3>
+                <p style={{ marginBottom: '12px', lineHeight: '1.6' }}>
+                    В комнате всегда <strong>{maxSeats} мест</strong>. Если к концу таймера не все места выкуплены игроками, пустые места автоматически занимают боты (у них нет бустов).
+                </p>
+                <p style={{ marginBottom: '12px', lineHeight: '1.6' }}>
+                    Ваша базовая вероятность победы зависит от доли выкупленных вами мест. Например, если вы купили 2 места из 10, ваш шанс — 20%. Ни один игрок не может выкупить более 50% мест.
+                </p>
+                {room.boostEnabled && (
+                    <div style={{ background: 'rgba(242, 165, 71, 0.15)', padding: '16px', borderRadius: '12px', marginTop: '20px' }}>
+                        <h4 style={{ margin: '0 0 8px 0', color: '#d47f22' }}>⚡ Усиление (Буст)</h4>
+                        <p style={{ margin: 0, fontSize: '15px' }}>
+                            Вы можете докупить буст на каждое из своих мест уже внутри комнаты. Каждый буст увеличивает "вес" этого места в <strong>{boostMultiplier} раза</strong> при финальном розыгрыше, отбирая долю вероятности у других участников и ботов. Ваш суммарный шанс с учетом бустов ограничен 50%.
+                        </p>
+                    </div>
+                )}
+            </section>
         </div>
     );
 };
