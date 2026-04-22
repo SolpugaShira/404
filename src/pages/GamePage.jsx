@@ -29,7 +29,6 @@ const GamePage = () => {
     const [countdownValue, setCountdownValue] = useState(3);
     const [showAnimation, setShowAnimation] = useState(false);
     const countdownTimersRef = useRef([]);
-    const countdownTriggeredRef = useRef(false); // флаг, что отсчёт уже запущен
 
     const roomSnapshotRef = useRef(null);
     const subscriptionsRef = useRef([]);
@@ -216,9 +215,38 @@ const GamePage = () => {
                             initialLoadDoneRef.current = true;
                         }
                         if (payload.status === 'COMPLETED' && payload.result) {
-                            setWinner(normalizeRoundMessage(payload.result));
+                            // 1. Сразу обновляем комнату (боты мгновенно появляются в списке участников)
+                            setRoom((prev) => mergeStableRoomState(normalizeSessionMessage(payload, prev), prev));
+
+                            // 2. Сбрасываем старые таймеры, если были
+                            countdownTimersRef.current.forEach(clearTimeout);
+                            countdownTimersRef.current = [];
+
+                            // 3. Запускаем визуальную секвенцию: 3..2..1 -> Анимация -> Победитель
+                            setShowCountdown(true);
+                            setCountdownValue(3);
+                            setShowAnimation(false);
+
+                            const timers = [];
+                            timers.push(setTimeout(() => { if (mountedRef.current) setCountdownValue(2); }, 1000));
+                            timers.push(setTimeout(() => { if (mountedRef.current) setCountdownValue(1); }, 2000));
+                            timers.push(setTimeout(() => {
+                                if (mountedRef.current) {
+                                    setShowCountdown(false);
+                                    setShowAnimation(true); // Запуск рулетки/анимации
+                                }
+                            }, 3000));
+                            timers.push(setTimeout(() => {
+                                if (mountedRef.current) {
+                                    setShowAnimation(false);
+                                    setWinner(normalizeRoundMessage(payload.result)); // Торжественный показ победителя
+                                }
+                            }, 7000)); // 3 сек отсчет + 4 сек анимация
+
+                            countdownTimersRef.current = timers;
+                        } else {
+                            setRoom((prev) => mergeStableRoomState(normalizeSessionMessage(payload, prev), prev));
                         }
-                        setRoom((prev) => mergeStableRoomState(normalizeSessionMessage(payload, prev), prev));
                     } catch (e) {
                         console.error('[GamePage] Session message parse error:', e);
                     }
@@ -261,60 +289,6 @@ const GamePage = () => {
         }
     };
 
-    // Эффект для обратного отсчёта и запуска анимации
-    useEffect(() => {
-        if (!room) return;
-        const isWaiting = room.status === 'WAITING' || room.status === 'FILLING';
-        if (!isWaiting) {
-            console.log('[GamePage] Not waiting state, skip countdown. Status:', room.status);
-            return;
-        }
-
-        console.log('[GamePage] Countdown effect. displaySecondsLeft:', displaySecondsLeft, 'triggered:', countdownTriggeredRef.current);
-
-        if (displaySecondsLeft <= 3 && displaySecondsLeft > 0 && !countdownTriggeredRef.current) {
-            countdownTriggeredRef.current = true;
-            console.log('[GamePage] Starting countdown from 3');
-
-            countdownTimersRef.current.forEach(clearTimeout);
-            countdownTimersRef.current = [];
-
-            setShowCountdown(true);
-            setCountdownValue(3);
-            setShowAnimation(false);
-            console.log('[GamePage] Show countdown overlay, value=3');
-
-            const timers = [];
-            timers.push(setTimeout(() => {
-                if (mountedRef.current) {
-                    setCountdownValue(2);
-                    console.log('[GamePage] Countdown value=2');
-                }
-            }, 1000));
-            timers.push(setTimeout(() => {
-                if (mountedRef.current) {
-                    setCountdownValue(1);
-                    console.log('[GamePage] Countdown value=1');
-                }
-            }, 2000));
-            timers.push(setTimeout(() => {
-                if (mountedRef.current) {
-                    setShowCountdown(false);
-                    setShowAnimation(true);
-                    console.log('[GamePage] Countdown finished, showing animation');
-                }
-            }, 3000));
-            countdownTimersRef.current = timers;
-        }
-
-        if (displaySecondsLeft > 3) {
-            if (countdownTriggeredRef.current) {
-                console.log('[GamePage] Resetting countdown trigger flag because timer > 3');
-            }
-            countdownTriggeredRef.current = false;
-        }
-    }, [displaySecondsLeft, room]);
-
     // ===== Условные возвраты =====
     if (!isAuthenticated) return <div className="loading">Проверка авторизации...</div>;
     if (loading) return <div className="loading">Загрузка игры...</div>;
@@ -327,8 +301,8 @@ const GamePage = () => {
     if (!room) return <div className="error">Комната не найдена</div>;
 
     const participants = room.participants ?? [];
-    const isWaiting = room.status === 'WAITING' || room.status === 'FILLING';
-    const isFinished = room.status === 'COMPLETED';
+    const isFinished = room.status === 'COMPLETED' && winner !== null;
+    const isWaiting = !isFinished;
     const userIsParticipant = participants.some((p) => p.userId === user?.id);
     const currentUserParticipant = participants.find((p) => p.userId === user?.id) ?? null;
 
