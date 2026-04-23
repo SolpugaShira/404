@@ -4,7 +4,7 @@ import { useUser } from '../context/useUser';
 import { fetchServerRoot, HTTP_BASE_URL_LABEL } from '../api/http';
 
 const Layout = () => {
-    const { user, logoutUser } = useUser();
+    const { user } = useUser();
     const [serverState, setServerState] = useState({
         label: 'Проверка сервера',
         online: false,
@@ -16,10 +16,7 @@ const Layout = () => {
         const loadServerState = async () => {
             try {
                 await fetchServerRoot();
-                if (cancelled) {
-                    return;
-                }
-
+                if (cancelled) return;
                 setServerState({
                     label: 'Сервер доступен',
                     online: true,
@@ -45,12 +42,14 @@ const Layout = () => {
         <div className="app-shell">
             <div className="app">
                 <header className="site-header">
-                    <div>
-                        <nav>
-                            <Link to="/">Bonus Rooms</Link>
-                        </nav>
-                    </div>
+                    <nav>
+                        <Link to="/">Bonus Rooms</Link>
+                    </nav>
                     <div className="header-side">
+                        <div className="header-user">
+                            <span className="header-user__name">{user.username}</span>
+                            <span className="header-user__meta">{user.balance} баллов</span>
+                        </div>
                         <div className={`server-badge ${serverState.online ? 'online' : 'offline'}`}>
                             <span className="server-badge__dot" />
                             <div className="server-badge__content">
@@ -58,9 +57,6 @@ const Layout = () => {
                                 <span>{HTTP_BASE_URL_LABEL}</span>
                             </div>
                         </div>
-                        <button type="button" className="logout-btn" onClick={() => logoutUser()}>
-                            Выйти
-                        </button>
                     </div>
                 </header>
                 <main>

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import RoomCard from '../components/RoomCard';
 import SearchBar from '../components/SearchBar';
 import HorizontalScrollSection from '../components/HorizontalScrollSection';
-import { fetchRooms, normalizeRoomSummary } from '../api/roomsApi';
+import { fetchRooms, normalizeRoomSummary, normalizeRoomsMessage, normalizeSessionMessage } from '../api/roomsApi';
 import { getStompClient, onStompConnectionChange } from '../stompClient';
 
 const HomePage = () => {
@@ -40,15 +40,19 @@ const HomePage = () => {
                 console.log(`[WS][MESSAGE] ${destination}`, message.body);
                 try {
                     const payload = JSON.parse(message.body);
-                    const updatedRoom = normalizeRoomSummary(payload);
+                    const updatedRooms = Array.isArray(payload)
+                        ? normalizeRoomsMessage(payload)
+                        : [normalizeRoomSummary(payload)];
+
                     setRooms((prevRooms) => {
-                        const roomExists = prevRooms.some((room) => room.id === updatedRoom.id);
-                        if (roomExists) {
-                            return prevRooms.map((room) => (
-                                room.id === updatedRoom.id ? updatedRoom : room
-                            ));
-                        }
-                        return [...prevRooms, updatedRoom];
+                        const roomsById = new Map(prevRooms.map((room) => [room.id, room]));
+                        updatedRooms.forEach((updatedRoom) => {
+                            roomsById.set(updatedRoom.id, {
+                                ...roomsById.get(updatedRoom.id),
+                                ...updatedRoom,
+                            });
+                        });
+                        return Array.from(roomsById.values());
                     });
                 } catch (error) {
                     console.error('Rooms parse error:', error);
@@ -84,6 +88,60 @@ const HomePage = () => {
             unsubscribeConnection();
         };
     }, []);
+
+    const roomIds = useMemo(
+        () => rooms.map((room) => room.roomId ?? room.id).filter(Boolean).sort(),
+        [rooms],
+    );
+    const roomIdsKey = roomIds.join('|');
+
+    useEffect(() => {
+        const sessionRoomIds = roomIdsKey ? roomIdsKey.split('|') : [];
+        if (sessionRoomIds.length === 0) return undefined;
+
+        const safeUnsubscribe = (sub) => {
+            try {
+                if (typeof sub?.unsubscribe === 'function') {
+                    sub.unsubscribe();
+                }
+            } catch {
+                return;
+            }
+        };
+
+        const subscribeToRoomSessions = (client) => {
+            if (!client?.connected) return [];
+            return sessionRoomIds.map((id) => {
+                const destination = `/topic/session/${id}`;
+                console.log(`[WS][SUBSCRIBE] ${destination}`);
+                return client.subscribe(destination, (message) => {
+                    console.log(`[WS][MESSAGE] ${destination}`, message.body);
+                    try {
+                        const payload = JSON.parse(message.body);
+                        setRooms((prevRooms) => prevRooms.map((room) => {
+                            const sameRoom = room.id === id || room.roomId === id;
+                            return sameRoom ? normalizeSessionMessage(payload, room) : room;
+                        }));
+                    } catch (error) {
+                        console.error('Room session parse error:', error);
+                    }
+                });
+            });
+        };
+
+        let subscriptions = subscribeToRoomSessions(getStompClient());
+        const unsubscribeConnection = onStompConnectionChange((client) => {
+            subscriptions.forEach(safeUnsubscribe);
+            subscriptions = subscribeToRoomSessions(client);
+        });
+
+        return () => {
+            subscriptions.forEach(safeUnsubscribe);
+            if (typeof unsubscribeConnection === 'function') {
+                unsubscribeConnection();
+            }
+        };
+    }, [roomIdsKey]);
 
     // Фильтрация по поиску (общая для всех категорий)
     const filteredBySearch = rooms.filter((room) => {

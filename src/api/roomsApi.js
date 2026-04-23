@@ -11,7 +11,7 @@ const normalizeParticipant = (participant) => ({
 
 export const normalizeRoomSummary = (room) => {
     const participants = (room.participants ?? []).map(normalizeParticipant);
-    const currentParticipants = participants.reduce((sum, p) => sum + p.seats, 0);
+    const currentParticipants = room.currentParticipants ?? participants.reduce((sum, p) => sum + p.seats, 0);
 
     return {
         ...room,
@@ -38,7 +38,7 @@ const normalizeSessionUpdate = (session) => {
     }
 
     const participants = (session.participants ?? []).map(normalizeParticipant);
-    const currentParticipants = participants.reduce((sum, p) => sum + p.seats, 0);
+    const currentParticipants = session.currentParticipants ?? participants.reduce((sum, p) => sum + p.seats, 0);
 
     return {
         roomId: session.roomId ?? session.id,

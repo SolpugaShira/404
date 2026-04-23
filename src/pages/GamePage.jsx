@@ -12,11 +12,13 @@ import {
 import { useUser } from '../context/useUser';
 import { getStompClient, onStompConnectionChange } from '../stompClient';
 import {TENNIS1, TENNIS2} from "../assets/Animations/tennisg2.jsx";
+import {TENNIS3} from "../assets/Animations/tennisg4.jsx";
 
 const DEFAULT_GAME_THEME = 'GOLFG';
 
 const animationDurations = {
     TENNISG: 10000,
+    TENNIS4G: 10000,
     GOLFG: 4000,
     RACINGG: 1500,
 };
@@ -24,6 +26,7 @@ const animationDurations = {
 const animationMap = {
     GOLFG: [GOLF1, GOLF2, GOLF3, GOLF4, GOLF5],
     TENNISG: [TENNIS1, TENNIS2],
+    TENNIS4G: [TENNIS3],
     RACINGG: [],
 };
 
@@ -34,6 +37,13 @@ const getGameTheme = (roomTheme) => {
 };
 
 const getAnimationDuration = (roomTheme) => animationDurations[getGameTheme(roomTheme)] ?? 10000;
+
+const getParticipantCount = (participants) => (Array.isArray(participants) ? participants.length : 0);
+
+const getVisualGameTheme = (roomTheme, participants) => {
+    const gameTheme = getGameTheme(roomTheme);
+    return gameTheme === 'TENNISG' && getParticipantCount(participants) >= 4 ? 'TENNIS4G' : gameTheme;
+};
 
 const getRandomAnimationComponent = (gameTheme) => {
     const animationComponents = animationMap[gameTheme] || [];
@@ -72,7 +82,6 @@ const GamePage = () => {
 
     // Логирование монтирования компонента
     // console.log('[GamePage] Render. showCountdown:', showCountdown, 'showAnimation:', showAnimation, 'displaySecondsLeft:', displaySecondsLeft);
-    const theme = getGameTheme(room?.theme);
     // Очистка при размонтировании
     useEffect(() => {
         mountedRef.current = true;
@@ -111,6 +120,7 @@ const GamePage = () => {
             name: mergedRoom.name,
             maxSeats: mergedRoom.maxSeats,
             entryFee: mergedRoom.entryFee,
+            participants: mergedRoom.participants ?? [],
             currentPrizePool: mergedRoom.currentPrizePool ?? 0,
             boostEnabled: mergedRoom.boostEnabled ?? false,
             boostCost: mergedRoom.boostCost ?? 0,
@@ -124,9 +134,11 @@ const GamePage = () => {
     // Таймер обратного отсчёта (от сервера)
     useEffect(() => {
         if (!room || room.status === 'COMPLETED') {
-            setDisplaySecondsLeft(0);
+            const resetTimerId = setTimeout(() => {
+                if (mountedRef.current) setDisplaySecondsLeft(0);
+            }, 0);
             console.log('[GamePage] Timer reset (no room or completed)');
-            return;
+            return () => clearTimeout(resetTimerId);
         }
         const calculateSecondsLeft = () => {
             if (!room.timerStartedAt) return Math.max(room.secondsLeft ?? 10, 10);
@@ -207,7 +219,9 @@ const GamePage = () => {
                 if (typeof subscription.unsubscribe === 'function') {
                     subscription.unsubscribe();
                 }
-            } catch {}
+            } catch {
+                return;
+            }
         };
         const unsubscribeAll = () => {
             subscriptionsRef.current.forEach(safeUnsubscribe);
@@ -264,7 +278,10 @@ const GamePage = () => {
                             setCountdownValue(3);
                             setShowAnimation(false);
                             setCurrentAnimationComponent(null);
-                            const animationTheme = getGameTheme(payload.theme ?? roomSnapshotRef.current?.theme);
+                            const animationTheme = getVisualGameTheme(
+                                payload.theme ?? roomSnapshotRef.current?.theme,
+                                payload.participants ?? roomSnapshotRef.current?.participants,
+                            );
                             const animationDuration = getAnimationDuration(animationTheme);
                             // console.log(room.theme.slice(0,-2))
                             const timers = [];
@@ -345,6 +362,7 @@ const GamePage = () => {
     if (!room) return <div className="error">Комната не найдена</div>;
 
     const participants = room.participants ?? [];
+    const visualTheme = getVisualGameTheme(room.theme, participants);
     const maxPossibleUsers = participants.length + (room.maxSeats - room.currentParticipants);
     const isFinished = room.status === 'COMPLETED' && winner !== null;
     const isWaiting = !isFinished;
@@ -407,7 +425,7 @@ const GamePage = () => {
                     </ul>
                 </aside>
 
-                <main className={`game-area ${theme}-${Math.min(participants.length, 7)}`}>
+                <main className={`game-area ${visualTheme}-${Math.min(participants.length, 7)}`}>
                     {showCountdown && (
                         <div className="countdown-overlay">
                             <div className="countdown-number">{countdownValue}</div>

@@ -1509,10 +1509,10 @@ nav a {
   z-index: 10;
 }
 
-.TENNISG-0{background-image: url("assets/SVG/Tennis_ingame/TENNIS1.svg");}
-.TENNISG-1{background-image: url("assets/SVG/Tennis_ingame/TENNIS2.svg");}
+.TENNISG-0{background-image: url("assets/SVG/Tennis2_ingame/TENNIS1.svg");}
+.TENNISG-1{background-image: url("assets/SVG/Tennis2_ingame/TENNIS2.svg");}
 .TENNISG-2, .TENNISG-3, .TENNISG-4, .TENNISG-5, .TENNISG-6, .TENNISG-7{
-  background-image: url("assets/SVG/Tennis_ingame/TENNIS3.svg");
+  background-image: url("assets/SVG/Tennis2_ingame/TENNIS3.svg");
 }
 .TENNISG-0, .TENNISG-1, .TENNISG-2, .TENNISG-3, .TENNISG-4, .TENNISG-5, .TENNISG-6, .TENNISG-7 {
   background-color: #86a9ab;
@@ -1544,72 +1544,3 @@ nav a {
   z-index: 10;
 }
 
-
-.countdown-number {
-  font-size: 120px;
-  font-weight: bold;
-  color: white;
-  text-shadow: 0 0 20px rgba(0,0,0,0.5);
-  animation: pulse 1s infinite;
-  position: relative;
-  top: -25%;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-
-/* Чтобы .game-area был контекстом позиционирования */
-.game-area {
-  position: relative;
-  overflow: hidden;
-}
-.game-area {
-  position: relative;
-  overflow: hidden;
-}
-
-.countdown-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 20;
-  border-radius: inherit;
-}
-
-.countdown-number {
-  font-size: 120px;
-  font-weight: bold;
-  color: white;
-  text-shadow: 0 0 20px rgba(0,0,0,0.5);
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.animation-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 22342141;
-}
-.animation-container {
-  width: 100%;
-  min-height: 300px
-}

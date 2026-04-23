@@ -30,7 +30,7 @@ const emptyStats = {
 const formatTransactionAmount = (amount) => (amount >= 0 ? `+${amount}` : `${amount}`);
 
 const AccountPage = () => {
-    const { user, refreshUser } = useUser();
+    const { user, refreshUser, logoutUser } = useUser();
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -56,7 +56,7 @@ const AccountPage = () => {
         return () => {
             cancelled = true;
         };
-    }, [user.id]);
+    }, [user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const stats = {
         ...emptyStats,
@@ -80,6 +80,7 @@ const AccountPage = () => {
                     <h1>{user.username}</h1>
                     <p>Статистика строится по завершённым играм и финансовым операциям пользователя.</p>
                 </div>
+                {loading && <span className="heading-chip">Обновление...</span>}
             </section>
 
             <section className="profile-hero">
@@ -184,6 +185,10 @@ const AccountPage = () => {
                     </div>
                 )}
             </section>
+
+            <button type="button" className="account-logout-btn" onClick={() => logoutUser()}>
+                Выйти
+            </button>
         </div>
     );
 };

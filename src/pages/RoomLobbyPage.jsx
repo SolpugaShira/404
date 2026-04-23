@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { fetchRoomById, bookSeats, normalizeSessionMessage } from '../api/roomsApi';
 import { useUser } from '../context/useUser';
@@ -100,7 +100,17 @@ const RoomLobbyPage = () => {
     const theme = room.theme ? room.theme.slice(0, -2) : 'GOLF';
     const userIsParticipant = participants.some((p) => p.userId === user?.id);
     const canIncreaseSeats = selectedSeats < maxAllowed && selectedSeats < freeSeats;
-    const joinDisabled = actionLoading || (!userIsParticipant && freeSeats <= 0);
+    const canBuySeats =
+        !userIsParticipant &&
+        freeSeats > 0 &&
+        (room.status === 'WAITING' || room.status === 'FILLING') &&
+        (user?.balance ?? 0) >= entryFee * selectedSeats;
+    const joinDisabled = actionLoading;
+    const actionLabel = userIsParticipant
+        ? 'Вернуться в игру'
+        : canBuySeats
+            ? 'Присоединиться'
+            : 'Смотреть';
 
     const handleJoin = async () => {
         if (!user) {
@@ -108,6 +118,10 @@ const RoomLobbyPage = () => {
             return;
         }
         if (userIsParticipant) {
+            navigate(`/game/${roomId}`);
+            return;
+        }
+        if (!canBuySeats) {
             navigate(`/game/${roomId}`);
             return;
         }
@@ -204,7 +218,7 @@ const RoomLobbyPage = () => {
                         )}
 
                         <button className="play-button" onClick={handleJoin} disabled={joinDisabled} style={{ marginLeft: 0, marginTop: 0, width: '100%' }}>
-                            {actionLoading ? 'Подключение...' : userIsParticipant ? 'Вернуться в игру' : 'Присоединиться'}
+                            {actionLoading ? 'Подключение...' : actionLabel}
                         </button>
                     </div>
                 </div>
