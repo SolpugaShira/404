@@ -11,6 +11,7 @@ import {
 } from '../api/roomsApi';
 import { useUser } from '../context/useUser';
 import { getStompClient, onStompConnectionChange } from '../stompClient';
+import {TENNIS1, TENNIS2} from "../assets/Animations/tennisg2.jsx";
 
 
 const GamePage = () => {
@@ -38,9 +39,10 @@ const GamePage = () => {
     const initialLoadDoneRef = useRef(false);
 
 
-    // Логирование монтирования компонента
-    console.log('[GamePage] Render. showCountdown:', showCountdown, 'showAnimation:', showAnimation, 'displaySecondsLeft:', displaySecondsLeft);
 
+    // Логирование монтирования компонента
+    // console.log('[GamePage] Render. showCountdown:', showCountdown, 'showAnimation:', showAnimation, 'displaySecondsLeft:', displaySecondsLeft);
+    const theme = room?.theme ? `${room.theme.slice(0, -2)}G` : "GOLFG";
     // Очистка при размонтировании
     useEffect(() => {
         mountedRef.current = true;
@@ -228,7 +230,13 @@ const GamePage = () => {
                             setShowCountdown(true);
                             setCountdownValue(3);
                             setShowAnimation(false);
-
+                            const dMap = {
+                                TENNISG: 10000,
+                                GOLFG: 4000,
+                                RACINGG: 1500
+                            }
+                            const animationDuration = dMap[theme] ?? 10000;
+                            // console.log(room.theme.slice(0,-2))
                             const timers = [];
                             timers.push(setTimeout(() => { if (mountedRef.current) setCountdownValue(2); }, 1000));
                             timers.push(setTimeout(() => { if (mountedRef.current) setCountdownValue(1); }, 2000));
@@ -238,12 +246,13 @@ const GamePage = () => {
                                     setShowAnimation(true); // Запуск рулетки/анимации
                                 }
                             }, 3000));
+                            // console.log(room.theme.slice(0,-2))
                             timers.push(setTimeout(() => {
                                 if (mountedRef.current) {
                                     setShowAnimation(false);
                                     setWinner(normalizeRoundMessage(payload.result)); // Торжественный показ победителя
                                 }
-                            }, 7000)); // 3 сек отсчет + 4 сек анимация
+                            }, 3000 + animationDuration)); // 3 сек отсчет + 4 сек анимация
 
                             countdownTimersRef.current = timers;
                         } else {
@@ -290,15 +299,19 @@ const GamePage = () => {
             setActionLoading(false);
         }
     };
+    const animationMap = {
+        GOLFG: [GOLF1, GOLF2, GOLF3, GOLF4, GOLF5],
+        TENNISG: [TENNIS1, TENNIS2],
+        RACINGG: []
+    }
 
-    const theme = room?.theme ? `${room.theme.slice(0, -2)}G` : "GOLFG";
-    const animationComponents = theme === 'GOLFG' ? [GOLF1, GOLF2, GOLF3, GOLF4, GOLF5] : [];
+    const animationComponents = animationMap[theme] || [];
     const currentAnimationComponent = useMemo(() => {
         if (animationComponents.length === 0) return null;
         const randomIndex = Math.floor(Math.random() * animationComponents.length);
         return animationComponents[randomIndex];
     }, [animationComponents]);
-
+    // console.log(room)
 
     // ===== Условные возвраты =====
     if (!isAuthenticated) return <div className="loading">Проверка авторизации...</div>;
