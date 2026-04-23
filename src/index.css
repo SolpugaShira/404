@@ -251,7 +251,7 @@ nav a {
 }
 
 .search-nav {
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .search-input-wrap {
@@ -513,6 +513,7 @@ nav a {
 .auth-card h1 {
   margin: 0;
   font-size: clamp(2rem, 5vw, 3rem);
+  color: black;
 }
 
 .auth-card p {
@@ -528,15 +529,15 @@ nav a {
 
 .auth-switcher__tab {
   flex: 1;
-  color: #324a65;
-  background: rgba(92, 127, 172, 0.08);
-  border: 1px solid rgba(138, 167, 204, 0.18);
+  color: black;
+  background-color: white;
+  border: 1px solid black;
 }
 
 .auth-switcher__tab.active {
-  color: white;
+  color: black;
   background: white;
-  border-color: transparent;
+  border-color: black;
 }
 
 .auth-form {

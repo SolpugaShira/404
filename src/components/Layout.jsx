@@ -48,7 +48,6 @@ const Layout = () => {
                     <div className="header-side">
                         <div className="header-user">
                             <span className="header-user__name">{user.username}</span>
-                            <span className="header-user__meta">{user.balance} баллов</span>
                         </div>
                         <div className={`server-badge ${serverState.online ? 'online' : 'offline'}`}>
                             <span className="server-badge__dot" />
