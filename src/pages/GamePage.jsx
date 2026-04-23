@@ -12,7 +12,7 @@ import {
 import { useUser } from '../context/useUser';
 import { getStompClient, onStompConnectionChange } from '../stompClient';
 import {TENNIS1, TENNIS2} from "../assets/Animations/tennisg2.jsx";
-import {TENNIS3} from "../assets/Animations/tennisg4.jsx";
+import {TENNIS3, TENNIS4} from "../assets/Animations/tennisg4.jsx";
 
 const DEFAULT_GAME_THEME = 'GOLFG';
 
@@ -26,7 +26,7 @@ const animationDurations = {
 const animationMap = {
     GOLFG: [GOLF1, GOLF2, GOLF3, GOLF4, GOLF5],
     TENNISG: [TENNIS1, TENNIS2],
-    TENNIS4G: [TENNIS3],
+    TENNIS4G: [TENNIS3, TENNIS4],
     RACINGG: [],
 };
 

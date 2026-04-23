@@ -1,16 +1,933 @@
-# React + Vite
+# Bonus Rooms Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Фронтенд-приложение для комнат с бонусными играми: пользователь регистрируется или входит по имени, просматривает комнаты, фильтрует их, покупает места, наблюдает за заполненными комнатами в режиме зрителя, участвует в розыгрыше, активирует бусты и смотрит историю аккаунта.
 
-Currently, two official plugins are available:
+Проект написан на React и Vite. Основная бизнес-логика находится на клиенте в виде нормализации API-ответов, WebSocket-синхронизации комнат и управления UI-состояниями игры.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Содержание
 
-## React Compiler
+- [Технологии](#технологии)
+- [Запуск проекта](#запуск-проекта)
+- [Переменные окружения](#переменные-окружения)
+- [Структура проекта](#структура-проекта)
+- [Маршруты приложения](#маршруты-приложения)
+- [Пользовательская модель и авторизация](#пользовательская-модель-и-авторизация)
+- [HTTP API слой](#http-api-слой)
+- [WebSocket и STOMP](#websocket-и-stomp)
+- [Главная страница](#главная-страница)
+- [Поиск и фильтр комнат](#поиск-и-фильтр-комнат)
+- [Карточки комнат и горизонтальная прокрутка](#карточки-комнат-и-горизонтальная-прокрутка)
+- [Лобби комнаты](#лобби-комнаты)
+- [Игровая страница](#игровая-страница)
+- [Механика участников, мест и зрителя](#механика-участников-мест-и-зрителя)
+- [Механика бустов и шанса победы](#механика-бустов-и-шанса-победы)
+- [Темы, фоны и анимации](#темы-фоны-и-анимации)
+- [Страница аккаунта](#страница-аккаунта)
+- [Стили и визуальные решения](#стили-и-визуальные-решения)
+- [Проверки качества](#проверки-качества)
+- [Типичные сценарии разработки](#типичные-сценарии-разработки)
+- [Известные особенности](#известные-особенности)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Технологии
 
-## Expanding the ESLint configuration
+Основной стек:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React 19
+- React Router 7
+- Vite 8
+- STOMP over WebSocket через `@stomp/stompjs`
+- ESLint 9
+
+Проект не использует TypeScript. Все компоненты и API-модули написаны на JavaScript/JSX.
+
+## Запуск проекта
+
+Установка зависимостей:
+
+```bash
+npm install
+```
+
+Запуск dev-сервера:
+
+```bash
+npm run dev
+```
+
+Сборка production-бандла:
+
+```bash
+npm run build
+```
+
+Проверка ESLint:
+
+```bash
+npm run lint
+```
+
+Локальный preview production-сборки:
+
+```bash
+npm run preview
+```
+
+## Переменные окружения
+
+HTTP API и WebSocket настраиваются через переменные Vite.
+
+### `VITE_API_BASE_URL`
+
+Базовый URL для HTTP-запросов.
+
+Поведение по умолчанию:
+
+- в dev-режиме используется пустая строка, то есть запросы идут на текущий origin и могут проксироваться Vite;
+- в production используется `https://sigma-ways.org`.
+
+Код находится в `src/api/http.js`.
+
+Пример:
+
+```env
+VITE_API_BASE_URL=https://sigma-ways.org
+```
+
+### `VITE_WS_URL`
+
+URL WebSocket/STOMP сервера.
+
+Поведение по умолчанию:
+
+- если переменная указана, используется она;
+- если приложение открыто в браузере и переменная не указана, URL строится от текущего host: `ws://host/ws` или `wss://host/ws`;
+- fallback: `wss://sigma-ways.org/ws`.
+
+Код находится в `src/stompClient.js`.
+
+Пример:
+
+```env
+VITE_WS_URL=wss://sigma-ways.org/ws
+```
+
+## Структура проекта
+
+```text
+src/
+  api/
+    http.js              # общий HTTP-клиент
+    roomsApi.js          # комнаты, сессии, победитель, бусты, фильтр
+    userApi.js           # auth, пользователь, игры, транзакции, статистика
+  assets/
+    Animations/          # React-компоненты SVG-анимаций победы
+    SVG/                 # фоновые SVG для карточек, лобби, игры и иконок
+  components/
+    AuthPage.jsx         # экран входа/регистрации
+    HorizontalScrollSection.jsx # горизонтальные секции комнат
+    Layout.jsx           # общий shell авторизованного приложения
+    RoomCard.jsx         # карточка комнаты
+    SearchBar.jsx        # поиск, фильтр, баланс, ссылка профиля
+  context/
+    UserContext.jsx      # provider пользователя и STOMP-подключения
+    userContext.js       # React context
+    useUser.js           # hook доступа к context
+  pages/
+    AccountPage.jsx      # профиль, статистика, история, выход
+    GamePage.jsx         # игровая страница, таймер, анимация, победитель
+    HomePage.jsx         # главная, категории, поиск, фильтр, WS-обновления
+    NotFoundPage.jsx     # 404
+    RoomLobbyPage.jsx    # лобби комнаты, покупка мест, spectator-вход
+  App.jsx                # маршруты
+  index.css              # глобальные стили и фоны
+  main.jsx               # точка входа
+  stompClient.js         # STOMP-клиент
+```
+
+## Маршруты приложения
+
+Маршруты объявлены в `src/App.jsx`.
+
+| Путь | Компонент | Назначение |
+| --- | --- | --- |
+| `/` | `HomePage` | Главная страница со списками комнат |
+| `/room/:roomId/lobby` | `RoomLobbyPage` | Лобби конкретной комнаты |
+| `/game/:roomId` | `GamePage` | Игровой экран комнаты |
+| `/account` | `AccountPage` | Аккаунт пользователя |
+| `*` | `NotFoundPage` | Страница 404 |
+
+Все маршруты вложены в `Layout`, но сам `Layout` показывается только после авторизации. Пока пользователь не авторизован, `UserProvider` вместо приложения рендерит `AuthPage`.
+
+## Пользовательская модель и авторизация
+
+Авторизация реализована в `src/context/UserContext.jsx`.
+
+В приложении нет отдельного JWT/token-слоя. Пользователь определяется по payload, полученному от auth/user API, и сохраняется в `sessionStorage` под ключом `currentUser`.
+
+### Жизненный цикл пользователя
+
+1. При старте приложение пытается прочитать `currentUser` из `sessionStorage`.
+2. Если пользователь найден, frontend пытается обновить профиль:
+   - если есть `id`, вызывается `fetchUserProfile(user.id)`;
+   - если профиль получить не удалось, выполняется fallback через `login(user.username)`.
+3. После успешного восстановления пользователя открывается основное приложение.
+4. После авторизации подключается STOMP-клиент.
+5. При выходе вызывается `disconnectStomp()`, пользователь удаляется из state и `sessionStorage`.
+
+### Нормализованная модель пользователя
+
+```js
+{
+  id,
+  username,
+  balance,
+  stats
+}
+```
+
+`balance` берется из `balance` или `bonusBalance`.
+
+### AuthPage
+
+`src/components/AuthPage.jsx` поддерживает два режима:
+
+- регистрация;
+- вход.
+
+Оба режима используют один и тот же endpoint `/api/v1/auth/login`, потому что `register` в `userApi.js` сейчас является alias к `authRequest`.
+
+Минимальная длина имени пользователя: 3 символа.
+
+## HTTP API слой
+
+Общий HTTP-клиент находится в `src/api/http.js`.
+
+### `request(path, options)`
+
+Функция:
+
+- строит абсолютный URL через `HTTP_BASE_URL`;
+- ставит `redirect: 'follow'`;
+- логирует запрос и ответ;
+- парсит JSON, если `content-type` содержит `application/json`;
+- иначе возвращает текст;
+- выбрасывает `Error`, если `response.ok === false`.
+
+Это позволяет одинаково работать с endpoint-ами, которые возвращают JSON, текст или пустой ответ.
+
+### Rooms API
+
+Файл: `src/api/roomsApi.js`.
+
+Основные функции:
+
+- `fetchRooms()` - получить список комнат.
+- `findRooms(filters)` - получить комнаты через `/api/v1/rooms/find`.
+- `fetchRoomSummaryById(roomId)` - получить summary комнаты.
+- `fetchRoomById(roomId)` - получить summary и session, затем объединить.
+- `fetchWinnerByRoomId(roomId)` - получить победителя завершенной комнаты.
+- `bookSeats(roomId, userId, seats)` - купить места через STOMP publish.
+- `leaveRoom(roomId, userId)` - выйти из комнаты через HTTP POST.
+- `activateBoost(roomId, userId, boosts)` - активировать бусты через STOMP publish.
+- `normalizeRoomSummary(room)` - привести summary комнаты к единому виду.
+- `normalizeSessionMessage(session, summary)` - объединить session update с текущим summary.
+- `normalizeRoundMessage(result)` - нормализовать результат раунда.
+
+### User API
+
+Файл: `src/api/userApi.js`.
+
+Основные функции:
+
+- `login(username)` - вход.
+- `register(username)` - регистрация, сейчас использует тот же auth endpoint.
+- `fetchUser(userId)` - получить пользователя.
+- `fetchUserGames(userId)` - получить игры пользователя.
+- `fetchUserTransactions(userId)` - получить транзакции пользователя.
+- `fetchUserProfile(userId)` - собрать пользователя и статистику.
+
+Если backend не возвращает готовую статистику, frontend строит ее из игр и транзакций.
+
+## WebSocket и STOMP
+
+STOMP-логика находится в `src/stompClient.js`.
+
+### Подключение
+
+`connectStomp(userId, userName, onConnected, onError)` создает `Client` из `@stomp/stompjs`.
+
+Подключение использует headers:
+
+```js
+{
+  userId,
+  userName
+}
+```
+
+### Переподключение
+
+Клиент настроен с:
+
+```js
+reconnectDelay: 5000
+heartbeatIncoming: 10000
+heartbeatOutgoing: 10000
+```
+
+При успешном подключении вызываются подписчики `onStompConnectionChange`.
+
+### Глобальный доступ
+
+Модуль экспортирует:
+
+- `connectStomp`
+- `disconnectStomp`
+- `getStompClient`
+- `onStompConnectionChange`
+
+`onStompConnectionChange` используется страницами, чтобы переподписываться после reconnect.
+
+### Топики
+
+Используемые направления:
+
+| Направление | Тип | Назначение |
+| --- | --- | --- |
+| `/topic/rooms` | subscribe | общий список/обновления комнат |
+| `/topic/session/:roomId` | subscribe | обновления конкретной игровой сессии |
+| `/app/room/:roomId/book-seats` | publish | покупка мест |
+| `/app/room/:roomId/boost` | publish | активация буста |
+
+## Главная страница
+
+Файл: `src/pages/HomePage.jsx`.
+
+Главная страница отвечает за:
+
+- загрузку списка комнат;
+- поиск по тексту;
+- серверную фильтрацию;
+- отображение категорий;
+- обновление списка через WebSocket;
+- подписку на session updates каждой комнаты, чтобы занятость менялась без перезагрузки.
+
+### Загрузка комнат
+
+При первом рендере вызывается `fetchRooms()`.
+
+Далее страница подписывается на `/topic/rooms`. Если приходит:
+
+- массив - нормализуется через `normalizeRoomsMessage`;
+- один объект - нормализуется через `normalizeRoomSummary`.
+
+Обновление происходит через `Map`, чтобы заменить существующую комнату по `id` или добавить новую.
+
+### Подписка на session updates
+
+После получения списка комнат вычисляется список `roomIds`. Для каждого id открывается подписка:
+
+```text
+/topic/session/:roomId
+```
+
+Это нужно, потому что вход пользователя в комнату может обновлять не общий список `/topic/rooms`, а только session topic. Благодаря этому `currentParticipants` и `participants` на главной обновляются сразу.
+
+### Категории
+
+После поиска и фильтрации комнаты раскладываются на секции:
+
+- Популярное
+- Большой выигрыш
+- Гольф
+- Теннис
+- Гонки
+
+Категория определяется по `theme`:
+
+- `GOLF-*` -> `GOLF`
+- `TENNIS-*` -> `TENNIS`
+- `RACING-*` -> `RACING`
+
+Секция "Большой выигрыш" сортирует комнаты по `currentPrizePool` по убыванию.
+
+## Поиск и фильтр комнат
+
+Файл: `src/components/SearchBar.jsx`.
+
+Поисковая строка выполняет локальный текстовый поиск по уже загруженному списку комнат:
+
+- `id`
+- `name`
+- `description`
+
+Фильтр открывается по клику на иконку справа в поиске.
+
+### Поля фильтра
+
+Поддерживаются поля:
+
+- `name`
+- `theme`
+- `maxSeats`
+- `minSeatsToStart`
+- `entryFee`
+- `prizePoolPercent`
+- `boostEnabled`
+- `boostCost`
+- `boostWeightMultiplier`
+
+Пустые значения не отправляются.
+
+### Endpoint фильтра
+
+Фильтр вызывает:
+
+```text
+GET /api/v1/rooms/find?...
+```
+
+Пример:
+
+```text
+/api/v1/rooms/find?theme=TENNIS-2&entryFee=100&boostEnabled=true
+```
+
+Реализация находится в `findRooms(filters)` в `roomsApi.js`.
+
+Если активных фильтров нет, вместо `/find` используется обычный `fetchRooms()`.
+
+### Theme filter
+
+В UI доступны точные темы:
+
+- `TENNIS-1`, `TENNIS-2`, `TENNIS-3`
+- `GOLF-1` ... `GOLF-7`
+- `RACING-1` ... `RACING-4`
+
+Это сделано потому, что backend-комнаты имеют именно такой формат поля `theme`.
+
+## Карточки комнат и горизонтальная прокрутка
+
+### RoomCard
+
+Файл: `src/components/RoomCard.jsx`.
+
+Карточка показывает:
+
+- название комнаты;
+- цену входа;
+- текущую занятость;
+- максимальное число мест;
+- фоновую картинку по `theme`.
+
+Клик по карточке ведет в:
+
+```text
+/room/:roomId/lobby
+```
+
+Карточка не блокируется, даже если комната занята или у пользователя не хватает средств. Это важно для spectator-режима.
+
+### HorizontalScrollSection
+
+Файл: `src/components/HorizontalScrollSection.jsx`.
+
+Компонент отвечает за горизонтальные списки комнат.
+
+Поддерживает:
+
+- кнопки прокрутки влево/вправо;
+- drag-scroll мышью;
+- обычную вертикальную прокрутку страницы колесом мыши.
+
+Drag-scroll включается только после заметного горизонтального движения. Это сделано, чтобы обычный клик по карточке не превращался в drag и не ломал переход в лобби.
+
+## Лобби комнаты
+
+Файл: `src/pages/RoomLobbyPage.jsx`.
+
+Лобби загружает комнату через `fetchRoomById(roomId)` и подписывается на:
+
+```text
+/topic/session/:roomId
+```
+
+### Что отображается
+
+- название комнаты;
+- описание;
+- участники;
+- минимальные места для старта;
+- цена входа;
+- стоимость буста;
+- множитель буста;
+- призовой фонд;
+- комиссия;
+- выбор количества мест;
+- кнопка действия.
+
+### Покупка мест
+
+Пользователь может купить от 1 до максимально допустимого количества мест.
+
+Ограничения:
+
+- нельзя купить больше свободных мест;
+- нельзя купить больше половины мест комнаты;
+- нельзя купить места, если комната не в статусе `WAITING` или `FILLING`;
+- нельзя купить места, если не хватает баланса.
+
+Покупка выполняется через STOMP:
+
+```text
+/app/room/:roomId/book-seats
+```
+
+Тело:
+
+```js
+{
+  userId,
+  seats
+}
+```
+
+После покупки frontend обновляет профиль пользователя и переходит в `/game/:roomId`.
+
+## Игровая страница
+
+Файл: `src/pages/GamePage.jsx`.
+
+Игровая страница отвечает за:
+
+- загрузку room/session state;
+- отображение участников;
+- таймер автозапуска;
+- расчет шанса победы;
+- активацию буста;
+- countdown 3..2..1;
+- показ победной анимации;
+- показ победителя;
+- spectator-режим.
+
+### Стабильное состояние комнаты
+
+В WebSocket-сообщениях могут приходить неполные данные. Чтобы не терять поля summary, используется `roomSnapshotRef`.
+
+`mergeStableRoomState(nextRoom, previousRoom)` объединяет:
+
+- предыдущий snapshot;
+- предыдущий state;
+- новый payload.
+
+Так сохраняются:
+
+- `theme`
+- `name`
+- `maxSeats`
+- `entryFee`
+- `boostEnabled`
+- `boostCost`
+- `boostWeightMultiplier`
+- `participants`
+- `sessionId`
+
+### Таймер
+
+Если есть `room.timerStartedAt`, оставшееся время считается как:
+
+```js
+(-Date.now() + room.timerStartedAt) / 1000 + 10
+```
+
+Иначе используется `room.secondsLeft`, но минимум 10 секунд.
+
+### Завершение игры
+
+Когда приходит session payload со статусом `COMPLETED` и `result`:
+
+1. Сразу обновляется комната.
+2. Сбрасываются старые countdown timers.
+3. Показывается countdown: 3, 2, 1.
+4. Запускается анимация.
+5. После завершения анимации показывается победитель.
+
+Длительность анимации выбирается по теме:
+
+```js
+TENNISG: 10000
+TENNIS4G: 10000
+GOLFG: 4000
+RACINGG: 1500
+```
+
+## Механика участников, мест и зрителя
+
+В проекте важно различать:
+
+- участника как пользователя/бота;
+- место как купленную долю в комнате.
+
+Например, если один пользователь купил 3 места, это:
+
+- 1 участник;
+- 3 занятых места.
+
+### currentParticipants
+
+`currentParticipants` означает занятые места. Если backend не прислал это поле, frontend считает сумму `seats` по участникам.
+
+### participants.length
+
+`participants.length` означает количество уникальных участников. Боты тоже считаются участниками.
+
+### Spectator mode
+
+Если пользователь:
+
+- не участник;
+- не может купить место;
+- не имеет денег;
+- или комната уже занята/не принимает места,
+
+он всё равно может перейти в `/game/:roomId` как зритель.
+
+В spectator-режиме пользователь видит комнату и ход игры, но не может покупать бусты, потому что он не участник.
+
+## Механика бустов и шанса победы
+
+Бусты включаются настройкой комнаты `boostEnabled`.
+
+Пользователь может активировать буст, если:
+
+- игра ещё не завершена;
+- пользователь является участником;
+- бусты включены;
+- есть доступные места без буста;
+- хватает баланса;
+- текущий шанс ниже 50%.
+
+Активация буста выполняется через STOMP:
+
+```text
+/app/room/:roomId/boost
+```
+
+Тело:
+
+```js
+{
+  userId,
+  boosts
+}
+```
+
+### Расчет шанса победы
+
+Шанс считается по весам:
+
+- обычное место весит `1`;
+- место с бустом весит `boostWeightMultiplier`;
+- пустые места добавляются в общий вес как обычные места, потому что в конце они могут быть заняты ботами.
+
+Формула:
+
+```js
+myTotalWeight / totalRoomWeight * 100
+```
+
+Результат округляется до целого процента.
+
+## Темы, фоны и анимации
+
+Темы комнат приходят от backend в формате:
+
+```text
+GOLF-1
+TENNIS-2
+RACING-3
+```
+
+Для игрового экрана тема нормализуется в runtime-формат:
+
+```text
+GOLFG
+TENNISG
+RACINGG
+```
+
+### Фоны карточек
+
+Фоны карточек находятся в:
+
+```text
+src/assets/SVG/Home_Assets/
+```
+
+CSS-классы:
+
+- `.GOLF-1` ... `.GOLF-7`
+- `.TENNIS-1` ... `.TENNIS-3`
+- `.RACING-1` ... `.RACING-4`
+
+### Фоны лобби
+
+Фоны лобби находятся в:
+
+```text
+src/assets/SVG/LobbySVG/
+```
+
+CSS-классы:
+
+- `.GOLFT`
+- `.TENNIST`
+- `.RACINGT`
+
+### Фоны игры
+
+Фоны игрового экрана находятся в:
+
+```text
+src/assets/SVG/GOLF_ingame/
+src/assets/SVG/Tennis2_ingame/
+src/assets/SVG/Tennis4_ingame/
+src/assets/SVG/Racing_ingame/
+```
+
+CSS-классы имеют формат:
+
+```text
+GOLFG-0
+TENNISG-2
+TENNIS4G-4
+RACINGG-7
+```
+
+Число в конце зависит от количества уникальных участников, но ограничивается максимумом 7 на игровом экране.
+
+### Tennis4
+
+Для тенниса есть отдельная логика:
+
+если `theme` нормализуется в `TENNISG` и уникальных участников 4 или больше, используется `TENNIS4G`.
+
+Важно:
+
+- боты считаются участниками;
+- если один игрок купил несколько мест, он всё равно считается одним участником;
+- переключение на `TENNIS4G` влияет на фон и анимацию.
+
+### Победные анимации
+
+React-компоненты анимаций находятся в:
+
+```text
+src/assets/Animations/
+```
+
+Используемые наборы:
+
+- `golfg1.jsx` -> `GOLF1` ... `GOLF5`
+- `tennisg2.jsx` -> `TENNIS1`, `TENNIS2`
+- `tennisg4.jsx` -> `TENNIS3` для режима `TENNIS4G`
+
+Конкретная анимация выбирается случайно в момент запуска анимации, а не во время рендера. Это уменьшает риск смены компонента при лишнем rerender.
+
+## Страница аккаунта
+
+Файл: `src/pages/AccountPage.jsx`.
+
+Страница показывает:
+
+- имя пользователя;
+- id;
+- баланс;
+- потрачено всего;
+- потрачено на бусты;
+- количество игр;
+- количество побед;
+- win rate;
+- лучший выигрыш;
+- общий выигрыш;
+- последние игры;
+- последние транзакции;
+- кнопку выхода.
+
+### История игр
+
+Для каждого раунда отображается:
+
+- победа или поражение;
+- короткий id игры;
+- выигрышная комбинация;
+- финансовый результат;
+- дата.
+
+### История транзакций
+
+Для каждой транзакции отображается:
+
+- тип;
+- описание;
+- сумма;
+- дата.
+
+### Выход
+
+Кнопка выхода находится внизу страницы аккаунта. Она вызывает `logoutUser()`, отключает STOMP и сбрасывает пользователя.
+
+## Стили и визуальные решения
+
+Основной файл стилей:
+
+```text
+src/index.css
+```
+
+В проекте есть несколько групп стилей:
+
+- базовые layout-стили;
+- стили карточек комнат;
+- auth/account/layout стили;
+- lobby/game стили;
+- фоны по темам;
+- финальные override-слои для z-index и интерактивности.
+
+### Черно-белый стиль
+
+Черно-белые ограничения применяются только к:
+
+- `Layout`
+- `AuthPage`
+- `AccountPage`
+
+Остальные страницы сохраняют игровые изображения, фоновые SVG и тематические цвета.
+
+### Border radius без border
+
+Для `Layout`, `AuthPage`, `AccountPage` используются скругления без видимых бордеров. Это сделано отдельным override-слоем внизу `index.css`.
+
+### Z-index решения
+
+В проекте много фоновых SVG, поэтому некоторые элементы требуют явного z-index:
+
+- карточки комнат и ссылки подняты над контейнером;
+- кнопки горизонтального скролла подняты над карточками;
+- текстовые блоки game/lobby подняты над фонами;
+- анимационный контейнер не должен перекрывать постоянные элементы вне состояния анимации.
+
+### Drag-scroll
+
+Горизонтальный drag-scroll реализован через mouse events, без pointer capture. Это важно, потому что pointer capture может перехватывать обычные клики по ссылкам и кнопкам.
+
+## Проверки качества
+
+Перед сдачей изменений используются:
+
+```bash
+npm run lint
+npm run build
+```
+
+`lint` проверяет:
+
+- неиспользуемые переменные;
+- правила React Hooks;
+- часть правил React Compiler/React purity.
+
+`build` проверяет:
+
+- корректность импортов;
+- валидность JSX;
+- сборку CSS/assets;
+- доступность SVG/анимаций.
+
+## Типичные сценарии разработки
+
+### Добавить новую тему карточки
+
+1. Положить SVG в `src/assets/SVG/Home_Assets/`.
+2. Добавить CSS-класс `.THEME-N`.
+3. Убедиться, что backend возвращает такую же строку в `room.theme`.
+
+### Добавить новый фон игрового экрана
+
+1. Положить SVG в соответствующую папку `*_ingame`.
+2. Добавить CSS-класс runtime-темы, например `.NEWG-0`.
+3. Добавить нормализацию темы в `GamePage.jsx`, если формат отличается.
+
+### Добавить новую победную анимацию
+
+1. Создать React-компонент в `src/assets/Animations/`.
+2. Импортировать его в `GamePage.jsx`.
+3. Добавить в `animationMap`.
+4. Указать длительность в `animationDurations`.
+
+### Добавить поле фильтра
+
+1. Добавить поле в `defaultFilters` в `SearchBar.jsx`.
+2. Добавить UI-контрол.
+3. Убедиться, что `findRooms(filters)` передает параметр в query string.
+4. Проверить, что backend понимает этот ключ.
+
+### Изменить расчет шанса победы
+
+Логика находится в `GamePage.jsx` в блоке `winPercent`.
+
+Нужно учитывать:
+
+- обычные места;
+- бустованные места;
+- пустые места;
+- ограничение шанса для покупки буста.
+
+## Известные особенности
+
+### Backend может присылать неполные session payload
+
+Для защиты используется merge со стабильным snapshot комнаты. Не стоит заменять состояние комнаты только новым session payload без merge, иначе можно потерять `theme`, `entryFee`, `boostEnabled` и другие summary-поля.
+
+### `currentParticipants` и `participants.length` означают разные вещи
+
+`currentParticipants` - количество занятых мест.
+
+`participants.length` - количество уникальных участников.
+
+Эта разница важна для:
+
+- отображения занятости;
+- расчета свободных мест;
+- переключения tennis на `TENNIS4G`;
+- spectator-режима.
+
+### Фильтр и WebSocket
+
+После применения серверного фильтра список комнат заменяется результатом `/rooms/find`. WebSocket-обновления продолжают применяться к тем комнатам, которые есть в текущем списке.
+
+### Production warning о размере chunk
+
+Vite может предупреждать, что JS chunk больше 500 kB. Это не ошибка сборки. Основная причина - inline SVG-анимации и графические компоненты. Возможное улучшение на будущее: lazy import анимаций и code splitting игровых экранов.
+
+## Быстрая карта файлов
+
+| Файл | За что отвечает |
+| --- | --- |
+| `src/App.jsx` | маршруты |
+| `src/main.jsx` | React root |
+| `src/api/http.js` | HTTP-клиент |
+| `src/api/roomsApi.js` | комнаты, session, фильтр, бусты |
+| `src/api/userApi.js` | пользователь, профиль, статистика |
+| `src/stompClient.js` | STOMP lifecycle |
+| `src/context/UserContext.jsx` | auth state, sessionStorage, STOMP connect |
+| `src/components/AuthPage.jsx` | login/register UI |
+| `src/components/Layout.jsx` | общий shell |
+| `src/components/SearchBar.jsx` | поиск, фильтр, баланс |
+| `src/components/RoomCard.jsx` | карточка комнаты |
+| `src/components/HorizontalScrollSection.jsx` | горизонтальные списки и drag-scroll |
+| `src/pages/HomePage.jsx` | главная и категории |
+| `src/pages/RoomLobbyPage.jsx` | покупка мест и spectator-вход |
+| `src/pages/GamePage.jsx` | игровой процесс |
+| `src/pages/AccountPage.jsx` | профиль и история |
+| `src/index.css` | весь CSS |
