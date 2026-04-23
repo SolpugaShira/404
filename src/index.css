@@ -1603,11 +1603,79 @@ nav a {
   z-index: 10;
 }
 
+
+.countdown-number {
+  font-size: 120px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 20px rgba(0,0,0,0.5);
+  animation: pulse 1s infinite;
+  position: relative;
+  top: -25%;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+
+/* Чтобы .game-area был контекстом позиционирования */
+.game-area {
+  position: relative;
+  overflow: hidden;
+}
+.game-area {
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  border-radius: inherit;
+}
+
+.countdown-number {
+  font-size: 120px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 20px rgba(0,0,0,0.5);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animation-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 22342141;
+}
+.animation-container {
+  width: 100%;
+  min-height: 300px
+}
 .TENNISG-0{background-image: url("assets/SVG/Tennis2_ingame/TENNIS1.svg");}
 .TENNISG-1{background-image: url("assets/SVG/Tennis2_ingame/TENNIS2.svg");}
-.TENNISG-2, .TENNISG-3, .TENNISG-4, .TENNISG-5, .TENNISG-6, .TENNISG-7{
-  background-image: url("assets/SVG/Tennis2_ingame/TENNIS3.svg");
-}
+.TENNISG-2,.TENNISG-3,.TENNISG-4, .TENNISG-5, .TENNISG-6, .TENNISG-7{background-image: url("assets/SVG/Tennis2_ingame/TENNIS3.svg");}
+
 .TENNISG-0, .TENNISG-1, .TENNISG-2, .TENNISG-3, .TENNISG-4, .TENNISG-5, .TENNISG-6, .TENNISG-7 {
   background-color: #86a9ab;
   background-repeat: no-repeat;
@@ -1617,6 +1685,24 @@ nav a {
   height: 100%;                    /* если нужна именно такая высота элемента – оставляем, иначе замени на auto */
   z-index: 10;
 }
+
+
+.TENNIS4G-0{background-image: url("assets/SVG/Tennis4_ingame/TENNIS1.svg");}
+.TENNIS4G-1{background-image: url("assets/SVG/Tennis4_ingame/TENNIS2.svg");}
+.TENNIS4G-2{background-image: url("assets/SVG/Tennis4_ingame/TENNIS3.svg");}
+.TENNIS4G-3{background-image: url("assets/SVG/Tennis4_ingame/TENNIS4.svg");}
+.TENNIS4G-4, .TENNIS4G-5, .TENNIS4G-6, .TENNIS4G-7 {
+  background-image: url("assets/SVG/Tennis4_ingame/TENNIS5.svg");
+}
+.TENNIS4G-0, .TENNIS4G-1, .TENNIS4G-2, .TENNIS4G-3, .TENNIS4G-4, .TENNIS4G-5, .TENNIS4G-6, .TENNIS4G-7 {
+    background-color: #86a9ab;
+    background-repeat: no-repeat;
+    background-size: 100% auto;      /* ширина 100% от элемента, высота автоматически (как получится) */
+    background-position: left top;   /* стартовая позиция (можно также "top left" или "start" – но left top надёжнее) */
+    width: 100%;
+    height: 100%;                    /* если нужна именно такая высота элемента – оставляем, иначе замени на auto */
+    z-index: 10;
+  }
 
 
 .RACINGG-0{ background-image: url("assets/SVG/Racing_ingame/Racing0.svg")}
