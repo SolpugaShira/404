@@ -1,6 +1,6 @@
 // GamePage.jsx
 import {GOLF1, GOLF2, GOLF3, GOLF4, GOLF5} from "../assets/Animations/golfg1.jsx";
-import React, {useEffect, useState, useRef, useCallback, useMemo} from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     fetchRoomById,
@@ -12,6 +12,35 @@ import {
 import { useUser } from '../context/useUser';
 import { getStompClient, onStompConnectionChange } from '../stompClient';
 import {TENNIS1, TENNIS2} from "../assets/Animations/tennisg2.jsx";
+
+const DEFAULT_GAME_THEME = 'GOLFG';
+
+const animationDurations = {
+    TENNISG: 10000,
+    GOLFG: 4000,
+    RACINGG: 1500,
+};
+
+const animationMap = {
+    GOLFG: [GOLF1, GOLF2, GOLF3, GOLF4, GOLF5],
+    TENNISG: [TENNIS1, TENNIS2],
+    RACINGG: [],
+};
+
+const getGameTheme = (roomTheme) => {
+    if (!roomTheme || typeof roomTheme !== 'string') return DEFAULT_GAME_THEME;
+    if (animationDurations[roomTheme]) return roomTheme;
+    return `${roomTheme.slice(0, -2)}G`;
+};
+
+const getAnimationDuration = (roomTheme) => animationDurations[getGameTheme(roomTheme)] ?? 10000;
+
+const getRandomAnimationComponent = (gameTheme) => {
+    const animationComponents = animationMap[gameTheme] || [];
+    if (animationComponents.length === 0) return null;
+    const randomIndex = Math.floor(Math.random() * animationComponents.length);
+    return animationComponents[randomIndex];
+};
 
 
 const GamePage = () => {
@@ -30,6 +59,7 @@ const GamePage = () => {
     const [showCountdown, setShowCountdown] = useState(false);
     const [countdownValue, setCountdownValue] = useState(3);
     const [showAnimation, setShowAnimation] = useState(false);
+    const [currentAnimationComponent, setCurrentAnimationComponent] = useState(null);
     const countdownTimersRef = useRef([]);
 
     const roomSnapshotRef = useRef(null);
@@ -42,7 +72,7 @@ const GamePage = () => {
 
     // Логирование монтирования компонента
     // console.log('[GamePage] Render. showCountdown:', showCountdown, 'showAnimation:', showAnimation, 'displaySecondsLeft:', displaySecondsLeft);
-    const theme = room?.theme ? `${room.theme.slice(0, -2)}G` : "GOLFG";
+    const theme = getGameTheme(room?.theme);
     // Очистка при размонтировании
     useEffect(() => {
         mountedRef.current = true;
@@ -74,6 +104,7 @@ const GamePage = () => {
         };
         roomSnapshotRef.current = {
             ...roomSnapshotRef.current,
+            theme: mergedRoom.theme,
             id: mergedRoom.id,
             roomId: mergedRoom.roomId,
             sessionId: mergedRoom.sessionId,
@@ -226,16 +257,15 @@ const GamePage = () => {
                             countdownTimersRef.current.forEach(clearTimeout);
                             countdownTimersRef.current = [];
 
+
+
                             // 3. Запускаем визуальную секвенцию: 3..2..1 -> Анимация -> Победитель
                             setShowCountdown(true);
                             setCountdownValue(3);
                             setShowAnimation(false);
-                            const dMap = {
-                                TENNISG: 10000,
-                                GOLFG: 4000,
-                                RACINGG: 1500
-                            }
-                            const animationDuration = dMap[theme] ?? 10000;
+                            setCurrentAnimationComponent(null);
+                            const animationTheme = getGameTheme(payload.theme ?? roomSnapshotRef.current?.theme);
+                            const animationDuration = getAnimationDuration(animationTheme);
                             // console.log(room.theme.slice(0,-2))
                             const timers = [];
                             timers.push(setTimeout(() => { if (mountedRef.current) setCountdownValue(2); }, 1000));
@@ -243,6 +273,7 @@ const GamePage = () => {
                             timers.push(setTimeout(() => {
                                 if (mountedRef.current) {
                                     setShowCountdown(false);
+                                    setCurrentAnimationComponent(() => getRandomAnimationComponent(animationTheme));
                                     setShowAnimation(true); // Запуск рулетки/анимации
                                 }
                             }, 3000));
@@ -250,6 +281,7 @@ const GamePage = () => {
                             timers.push(setTimeout(() => {
                                 if (mountedRef.current) {
                                     setShowAnimation(false);
+                                    setCurrentAnimationComponent(null);
                                     setWinner(normalizeRoundMessage(payload.result)); // Торжественный показ победителя
                                 }
                             }, 3000 + animationDuration)); // 3 сек отсчет + 4 сек анимация
@@ -299,18 +331,6 @@ const GamePage = () => {
             setActionLoading(false);
         }
     };
-    const animationMap = {
-        GOLFG: [GOLF1, GOLF2, GOLF3, GOLF4, GOLF5],
-        TENNISG: [TENNIS1, TENNIS2],
-        RACINGG: []
-    }
-
-    const animationComponents = animationMap[theme] || [];
-    const currentAnimationComponent = useMemo(() => {
-        if (animationComponents.length === 0) return null;
-        const randomIndex = Math.floor(Math.random() * animationComponents.length);
-        return animationComponents[randomIndex];
-    }, [animationComponents]);
     // console.log(room)
 
     // ===== Условные возвраты =====

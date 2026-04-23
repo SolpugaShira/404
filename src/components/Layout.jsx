@@ -47,7 +47,7 @@ const Layout = () => {
                 <header className="site-header">
                     <div>
                         <nav>
-                            <Link to="/">БЕЗУМНЫЙ КАЗИК 228</Link>
+                            <Link to="/">Bonus Rooms</Link>
                         </nav>
                     </div>
                     <div className="header-side">
