@@ -116,6 +116,37 @@ export const fetchRooms = async () => {
     return rooms.map(normalizeRoomSummary);
 };
 
+const parseRoomsPayload = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (typeof payload !== 'string') return [];
+
+    try {
+        const parsed = JSON.parse(payload);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+};
+
+export const findRooms = async (filters = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === '') return;
+        params.set(key, String(value));
+    });
+
+    const query = params.toString();
+    if (!query) {
+        return fetchRooms();
+    }
+
+    const rooms = await request(`/api/v1/rooms/find?${query}`, {
+        method: 'GET',
+    });
+
+    return parseRoomsPayload(rooms).map(normalizeRoomSummary);
+};
+
 export const fetchRoomSummaryById = async (roomId) => {
     try {
         const room = await request(`/api/v1/rooms/${roomId}`, {

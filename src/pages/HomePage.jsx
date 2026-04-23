@@ -2,26 +2,46 @@ import { useEffect, useMemo, useState } from 'react';
 import RoomCard from '../components/RoomCard';
 import SearchBar from '../components/SearchBar';
 import HorizontalScrollSection from '../components/HorizontalScrollSection';
-import { fetchRooms, normalizeRoomSummary, normalizeRoomsMessage, normalizeSessionMessage } from '../api/roomsApi';
+import { fetchRooms, findRooms, normalizeRoomSummary, normalizeRoomsMessage, normalizeSessionMessage } from '../api/roomsApi';
 import { getStompClient, onStompConnectionChange } from '../stompClient';
 
 const HomePage = () => {
     const [rooms, setRooms] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [filters, setFilters] = useState({});
+    const [filterError, setFilterError] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    const loadRooms = async (nextFilters = filters) => {
+        setLoading(true);
+        try {
+            const data = Object.keys(nextFilters).length > 0
+                ? await findRooms(nextFilters)
+                : await fetchRooms();
+            setRooms(data);
+            setFilterError(null);
+        } catch (error) {
+            console.error('Failed to load rooms:', error);
+            setFilterError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         let cancelled = false;
 
-        const loadRooms = async () => {
+        const loadInitialRooms = async () => {
             try {
                 const data = await fetchRooms();
                 if (!cancelled) {
                     setRooms(data);
+                    setFilterError(null);
                 }
             } catch (error) {
                 if (!cancelled) {
                     console.error('Failed to load rooms:', error);
+                    setFilterError(error.message);
                 }
             } finally {
                 if (!cancelled) {
@@ -30,7 +50,7 @@ const HomePage = () => {
             }
         };
 
-        loadRooms();
+        loadInitialRooms();
 
         const subscribeToRooms = (client) => {
             if (!client?.connected) return undefined;
@@ -88,6 +108,19 @@ const HomePage = () => {
             unsubscribeConnection();
         };
     }, []);
+
+    const handleApplyFilters = async (draftFilters) => {
+        const activeFilters = Object.fromEntries(
+            Object.entries(draftFilters).filter(([, filterValue]) => filterValue !== ''),
+        );
+        setFilters(activeFilters);
+        await loadRooms(activeFilters);
+    };
+
+    const handleResetFilters = async () => {
+        setFilters({});
+        await loadRooms({});
+    };
 
     const roomIds = useMemo(
         () => rooms.map((room) => room.roomId ?? room.id).filter(Boolean).sort(),
@@ -181,7 +214,15 @@ const HomePage = () => {
 
     return (
         <div className="home-page">
-            <SearchBar value={searchTerm} onChange={setSearchTerm} />
+            <SearchBar
+                value={searchTerm}
+                onChange={setSearchTerm}
+                filters={filters}
+                onApplyFilters={handleApplyFilters}
+                onResetFilters={handleResetFilters}
+                filtering={loading}
+            />
+            {filterError && <div className="error filter-error">Ошибка фильтра: {filterError}</div>}
 
             {loading ? (
                 <div className="loading">Загрузка комнат...</div>
